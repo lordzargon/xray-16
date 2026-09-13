@@ -17,17 +17,27 @@ target_sources(minilua PRIVATE
 	"${LUAJIT_DIR}/host/minilua.c"
 )
 
-target_compile_options(minilua
-	PRIVATE
-	${HOST_ACFLAGS}
+set_target_properties(minilua PROPERTIES
+	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+	RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_BINARY_DIR}"
+	RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
-target_link_libraries(minilua
-	PRIVATE
-	$<$<BOOL:${LUA_USE_POSIX}>:m>
-)
+if (NOT MSVC)
+	target_compile_options(minilua
+		PRIVATE
+		${HOST_ACFLAGS}
+	)
 
-target_link_options(minilua
-    PRIVATE
-    ${HOST_ALDFLAGS}
-)
+	target_link_libraries(minilua
+		PRIVATE
+		$<$<BOOL:${LUA_USE_POSIX}>:m>
+	)
+
+	target_link_options(minilua
+		PRIVATE
+		${HOST_ALDFLAGS}
+	)
+else()
+	target_compile_definitions(minilua PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()

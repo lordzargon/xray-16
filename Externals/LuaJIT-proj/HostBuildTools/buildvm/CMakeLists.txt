@@ -30,13 +30,24 @@ target_include_directories(buildvm
 	${LUAJIT_DIR}
 )
 
-target_compile_options(buildvm
-	PRIVATE
-	${HOST_ACFLAGS}
-    -Wno-discarded-qualifiers
+set_target_properties(buildvm PROPERTIES
+	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+	RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_BINARY_DIR}"
+	RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
-target_link_options(buildvm
-    PRIVATE
-    ${HOST_ALDFLAGS}
-)
+if (NOT MSVC)
+	target_compile_options(buildvm
+		PRIVATE
+		${HOST_ACFLAGS}
+		-Wno-discarded-qualifiers
+	)
+
+	target_link_options(buildvm
+		PRIVATE
+		${HOST_ALDFLAGS}
+	)
+else()
+	target_compile_definitions(buildvm PRIVATE _CRT_SECURE_NO_WARNINGS)
+	target_compile_options(buildvm PRIVATE ${HOST_ACFLAGS})
+endif()
