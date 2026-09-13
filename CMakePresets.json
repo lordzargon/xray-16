@@ -1,0 +1,57 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "android-arm64-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "$env{ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Android",
+        "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
+        "ANDROID_ABI": "arm64-v8a",
+        "ANDROID_PLATFORM": "android-29",
+        "CMAKE_SYSTEM_VERSION": "29",
+        "ANDROID_STL": "c++_shared",
+        "ANDROID_ARM_NEON": "TRUE",
+        "BUILD_SHARED_LIBS": "ON"
+      }
+    },
+    {
+      "name": "android-arm64-debug",
+      "displayName": "Android ARM64 Debug (API 29)",
+      "description": "Android arm64-v8a Debug build targeting API 29 using NDK Clang and Ninja",
+      "inherits": "android-arm64-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "android-arm64-release",
+      "displayName": "Android ARM64 Release (API 29)",
+      "description": "Android arm64-v8a Release build targeting API 29 using NDK Clang and Ninja",
+      "inherits": "android-arm64-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "android-arm64-debug",
+      "displayName": "Android ARM64 Debug Build",
+      "configurePreset": "android-arm64-debug"
+    },
+    {
+      "name": "android-arm64-release",
+      "displayName": "Android ARM64 Release Build",
+      "configurePreset": "android-arm64-release"
+    }
+  ]
+}
