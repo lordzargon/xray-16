@@ -30,7 +30,7 @@ param (
     [switch]$ConfigureOnly,
     [switch]$BuildOnly,
     [Alias("Targets")]
-    [string]$Target = "",
+    [string[]]$Target = @(),
     [switch]$Help
 )
 
@@ -156,8 +156,12 @@ try {
     if (-not $ConfigureOnly) {
         Write-Host "`n--- Building preset: $PresetName ---" -ForegroundColor Cyan
         $buildArgs = @("--build", "--preset", $PresetName)
-        if (-not [string]::IsNullOrWhiteSpace($Target)) {
-            $buildArgs += @("--target", $Target)
+        if ($Target.Count -gt 0) {
+            foreach ($t in $Target) {
+                if (-not [string]::IsNullOrWhiteSpace($t)) {
+                    $buildArgs += @("--target", $t)
+                }
+            }
         }
         & cmake @buildArgs
         if ($LASTEXITCODE -ne 0) {

@@ -110,7 +110,10 @@ if [[ ${CONFIGURE_ONLY} -eq 0 ]]; then
     echo -e "\n--- Building preset: ${PRESET_NAME} ---"
     BUILD_ARGS=(--build --preset "${PRESET_NAME}")
     if [[ -n "${TARGET}" ]]; then
-        BUILD_ARGS+=(--target "${TARGET}")
+        IFS=',' read -ra TARGET_ARRAY <<< "${TARGET}"
+        for t in "${TARGET_ARRAY[@]}"; do
+            BUILD_ARGS+=(--target "$t")
+        done
     fi
     cmake "${BUILD_ARGS[@]}"
 fi
