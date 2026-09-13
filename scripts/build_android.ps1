@@ -29,6 +29,7 @@ param (
     [switch]$Clean,
     [switch]$ConfigureOnly,
     [switch]$BuildOnly,
+    [Alias("Targets")]
     [string]$Target = "",
     [switch]$Help
 )

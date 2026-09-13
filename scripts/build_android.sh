@@ -50,7 +50,7 @@ while [[ $# -gt 0 ]]; do
             BUILD_ONLY=1
             shift
             ;;
-        --target)
+        --target|--targets)
             TARGET="$2"
             shift 2
             ;;
