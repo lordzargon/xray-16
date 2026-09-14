@@ -74,7 +74,7 @@ public class OpenXRayActivity extends SDLActivity {
 
     @Override
     protected String getMainSharedObject() {
-        return "xr_3da";
+        return getApplicationInfo().nativeLibraryDir + "/xr_3da.so";
     }
 
     @Override
@@ -85,14 +85,10 @@ public class OpenXRayActivity extends SDLActivity {
     @Override
     protected String[] getLibraries() {
         return new String[] {
-            // Third-party staged dependencies
+            // C++ runtime and third-party shared dependencies
+            "c++_shared",
             "SDL2",
             "openal",
-            "lzo2",
-            "ogg",
-            "vorbis",
-            "vorbisfile",
-            "theora",
 
             // Core subsystems
             "xrAPI",
