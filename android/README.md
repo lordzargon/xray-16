@@ -22,8 +22,22 @@ From the repository root:
 # Bash (Linux/macOS/CI)
 ./scripts/build_android.sh --config Release
 ```
-Or directly with CMake 3.23+:
-```bash
-cmake --preset android-arm64-release
-cmake --build --preset android-arm64-release
+## Building the Android APK
+From the `android/` directory:
+```powershell
+.\gradlew.bat assembleDebug
+```
+The output APK is generated at:
+`android/app/build/outputs/apk/debug/app-debug.apk`
+
+All 20 compiled OpenXRay engine modules, `xr_3da.so`, `libSDL2.so`, `libopenal.so`, and `libc++_shared.so` are automatically staged and packaged into `lib/arm64-v8a/`.
+
+## Deploying Game Assets to Device
+To deploy S.T.A.L.K.E.R. Call of Pripyat assets (e.g. from GOG Galaxy), OpenXRay OpenGL shaders, and the Android `fsgame.ltx` to a connected device:
+```powershell
+# Dry run check
+.\scripts\deploy_cop_assets.ps1 -DryRun
+
+# Deploy assets, install APK, and launch game
+.\scripts\deploy_cop_assets.ps1 -InstallApk -LaunchApp
 ```

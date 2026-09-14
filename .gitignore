@@ -21,5 +21,8 @@ android/sysroot/
 *.vsp
 *.vspx
 
-# exclude doxygen output
-doc/doxygen/html/*
+# Android build files
+android/local.properties
+android/.gradle/
+android/app/build/
+android/app/src/main/jniLibs/

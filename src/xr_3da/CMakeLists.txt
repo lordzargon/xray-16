@@ -1,4 +1,8 @@
-add_executable(xr_3da)
+if (ANDROID)
+    add_library(xr_3da SHARED)
+else()
+    add_executable(xr_3da)
+endif()
 
 target_sources(xr_3da PRIVATE
     entry_point.cpp
@@ -31,12 +35,14 @@ target_link_libraries(xr_3da
     xrEngine
     xrRender_GL
     xrGame
+    $<$<BOOL:${ANDROID}>:SDL2::SDL2 log>
 )
 
 set_target_properties(xr_3da PROPERTIES
     PREFIX ""
 )
 
-install(TARGETS xr_3da RUNTIME
-    DESTINATION "${CMAKE_INSTALL_BINDIR}"
+install(TARGETS xr_3da
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )

@@ -77,6 +77,75 @@ int APIENTRY WinMain(HINSTANCE inst, HINSTANCE prevInst, char* commandLine, int 
 
     return result;
 }
+#elif defined(__ANDROID__)
+#include <android/log.h>
+#define ALOGI(...) __android_log_print(ANDROID_LOG_INFO, "OpenXRay", __VA_ARGS__)
+
+extern "C" XR_EXPORT int SDL_main(int argc, char *argv[])
+{
+    int result = EXIT_FAILURE;
+
+    try
+    {
+        std::string cmd;
+        for (int i = 1; i < argc; ++i)
+        {
+            if (argv[i])
+            {
+                cmd += argv[i];
+                cmd += " ";
+            }
+        }
+
+        // On Android, if -fsltx is not explicitly provided, search standard locations
+        if (cmd.find("-fsltx") == std::string::npos)
+        {
+            const char* candidatePaths[] = {
+                "/sdcard/Android/data/org.openxray/files/fsgame.ltx",
+                "/sdcard/OpenXRay/fsgame.ltx",
+                "/storage/emulated/0/Android/data/org.openxray/files/fsgame.ltx",
+                "/storage/emulated/0/OpenXRay/fsgame.ltx"
+            };
+            for (const char* path : candidatePaths)
+            {
+                if (access(path, F_OK) == 0)
+                {
+                    ALOGI("Discovered fsgame.ltx at: %s", path);
+                    cmd += "-fsltx ";
+                    cmd += path;
+                    cmd += " ";
+                    break;
+                }
+            }
+        }
+
+        ALOGI("Starting OpenXRay with commandline: %s", cmd.c_str());
+        result = entry_point(cmd.c_str());
+    }
+    catch (const std::overflow_error& e)
+    {
+        _resetstkoflw();
+        FATAL_F("stack overflow: %s", e.what());
+    }
+    catch (const std::runtime_error& e)
+    {
+        FATAL_F("runtime error: %s", e.what());
+    }
+    catch (const std::exception& e)
+    {
+        FATAL_F("exception: %s", e.what());
+    }
+    catch (...)
+    {
+    }
+
+    return result;
+}
+
+extern "C" XR_EXPORT int main(int argc, char *argv[])
+{
+    return SDL_main(argc, argv);
+}
 #else
 int main(int argc, char *argv[])
 {
