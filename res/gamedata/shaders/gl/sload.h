@@ -69,7 +69,7 @@ void UpdateTC( inout p_bumped I )
 			if (fCurrHeight < fCurrentBound)
 			{	
 				vTexCurrentOffset += vTexOffsetPerStep;		
-				fCurrHeight = textureLod( s_bumpX, vTexCurrentOffset.xy, 0 ).a; 
+				fCurrHeight = textureLod( s_bumpX, vTexCurrentOffset.xy, 0.0 ).a; 
 				fCurrentBound -= fStepSize;
 			}
 		}
@@ -84,14 +84,14 @@ void UpdateTC( inout p_bumped I )
 */
 		//	Reconstruct previouse step's data
 		vTexCurrentOffset -= vTexOffsetPerStep;
-		float fPrevHeight = textureLod( s_bumpX, vTexCurrentOffset.xy, 0 ).a;
+		float fPrevHeight = textureLod( s_bumpX, vTexCurrentOffset.xy, 0.0 ).a;
 
 		//	Smooth tc position between current and previouse step
 		float	fDelta2 = ((fCurrentBound + fStepSize) - fPrevHeight);
 		float	fDelta1 = (fCurrentBound - fCurrHeight);
 		float	fParallaxAmount = (fCurrentBound * fDelta2 - (fCurrentBound + fStepSize) * fDelta1 ) / ( fDelta2 - fDelta1 );
 		float	fParallaxFade 	= smoothstep(fParallaxStopFade, fParallaxStartFade, I.position.z);
-		float2	vParallaxOffset = vDelta * ((1- fParallaxAmount )*fParallaxFade);
+		float2	vParallaxOffset = vDelta * ((1.0- fParallaxAmount )*fParallaxFade);
 		float2	vTexCoord = I.tcdh + vParallaxOffset;
 	
 		//	Output the result
@@ -225,7 +225,7 @@ surface_bumped sload ( p_bumped I)
 		S.normal.z			*=	0.5;		//. make bump twice as contrast (fake, remove me if possible)
 
 #ifdef	GBUFFER_OPTIMIZATION
-	   S.height = 0;
+	   S.height = 0.0;
 #endif	//	GBUFFER_OPTIMIZATION
       return              S;
 }
@@ -235,7 +235,7 @@ surface_bumped sload ( p_bumped I, float2 pixeloffset )
       surface_bumped      S   = sload_i	(I, pixeloffset );
 		S.normal.z			*=	0.5;		//. make bump twice as contrast (fake, remove me if possible)
 #ifdef	GBUFFER_OPTIMIZATION
-	   S.height = 0;
+	   S.height = 0.0;
 #endif	//	GBUFFER_OPTIMIZATION
       return              S;
 }

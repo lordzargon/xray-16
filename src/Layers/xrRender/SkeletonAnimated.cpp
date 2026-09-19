@@ -405,7 +405,7 @@ CBlend* CKinematicsAnimated::LL_PlayCycle(
 CBlend* CKinematicsAnimated::PlayCycle(
     LPCSTR N, BOOL bMixIn, PlayCallback Callback, LPVOID CallbackParam, u8 channel /*= 0*/)
 {
-    MotionID motion_ID = ID_Cycle(N);
+    MotionID motion_ID = ID_Cycle_Safe(N);
     R_ASSERT3_CURE(motion_ID.valid(), "! MODEL: can't find cycle:", N, { return nullptr; });
     return PlayCycle(motion_ID, bMixIn, Callback, CallbackParam, channel);
 }

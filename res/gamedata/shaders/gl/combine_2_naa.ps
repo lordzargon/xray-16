@@ -119,7 +119,7 @@ c2_out _main( v2p_aa_AA I )
  	res.Color += combine_bloom( img, bloom );
 #ifdef USE_MSAA
 	float4 ptp = mul(m_P, float4(gbd.P, 1.0));
-	res.Depth = ptp.w==0?1:ptp.z/ptp.w;
+	res.Depth = ptp.w==0.0?1.0:ptp.z/ptp.w;
 #endif
 	
 	return res;

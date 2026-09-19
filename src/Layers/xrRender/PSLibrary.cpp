@@ -10,8 +10,8 @@
 
 namespace xray::render::RENDER_NAMESPACE
 {
-bool ped_sort_pred(const PS::CPEDef* a, const PS::CPEDef* b) { return xr_strcmp(a->Name(), b->Name()) < 0; }
-bool pgd_sort_pred(const PS::CPGDef* a, const PS::CPGDef* b) { return xr_strcmp(a->m_Name, b->m_Name) < 0; }
+bool ped_sort_pred(const PS::CPEDef* a, const PS::CPEDef* b) { return xr_stricmp(a->Name(), b->Name()) < 0; }
+bool pgd_sort_pred(const PS::CPGDef* a, const PS::CPGDef* b) { return xr_stricmp(a->m_Name.c_str(), b->m_Name.c_str()) < 0; }
 //----------------------------------------------------
 void CPSLibrary::OnCreate()
 {
@@ -48,17 +48,23 @@ PS::PEDIt CPSLibrary::FindPEDIt(LPCSTR Name)
 {
     if (!Name)
         return m_PEDs.end();
+
+    string256 norm_name;
+    xr_strcpy(norm_name, sizeof(norm_name), Name);
+    for (char* p = norm_name; *p; ++p)
+        if (*p == '/') *p = '\\';
+
 #ifdef _EDITOR
     for (PS::PEDIt it = m_PEDs.begin(); it != m_PEDs.end(); it++)
-        if (0 == xr_strcmp((*it)->Name(), Name))
+        if (0 == xr_stricmp((*it)->Name(), norm_name))
             return it;
     return m_PEDs.end();
 #else
-    PS::PEDIt I = std::lower_bound(m_PEDs.begin(), m_PEDs.end(), Name, [](const PS::CPEDef* a, pcstr b)
+    PS::PEDIt I = std::lower_bound(m_PEDs.begin(), m_PEDs.end(), (pcstr)norm_name, [](const PS::CPEDef* a, pcstr b)
     {
-        return xr_strcmp(a->Name(), b) < 0;
+        return xr_stricmp(a->Name(), b) < 0;
     });
-    if (I == m_PEDs.end() || (0 != xr_strcmp((*I)->m_Name, Name)))
+    if (I == m_PEDs.end() || (0 != xr_stricmp((*I)->m_Name.c_str(), norm_name)))
         return m_PEDs.end();
     return I;
 #endif
@@ -74,17 +80,23 @@ PS::PGDIt CPSLibrary::FindPGDIt(LPCSTR Name)
 {
     if (!Name)
         return m_PGDs.end();
+
+    string256 norm_name;
+    xr_strcpy(norm_name, sizeof(norm_name), Name);
+    for (char* p = norm_name; *p; ++p)
+        if (*p == '/') *p = '\\';
+
 #ifdef _EDITOR
     for (PS::PGDIt it = m_PGDs.begin(); it != m_PGDs.end(); it++)
-        if (0 == xr_strcmp((*it)->m_Name, Name))
+        if (0 == xr_stricmp((*it)->m_Name.c_str(), norm_name))
             return it;
     return m_PGDs.end();
 #else
-    PS::PGDIt I = std::lower_bound(m_PGDs.begin(), m_PGDs.end(), Name, [](const PS::CPGDef* a, pcstr b)
+    PS::PGDIt I = std::lower_bound(m_PGDs.begin(), m_PGDs.end(), (pcstr)norm_name, [](const PS::CPGDef* a, pcstr b)
     {
-        return xr_strcmp(a->m_Name, b) < 0;
+        return xr_stricmp(a->m_Name.c_str(), b) < 0;
     });
-    if (I == m_PGDs.end() || (0 != xr_strcmp((*I)->m_Name, Name)))
+    if (I == m_PGDs.end() || (0 != xr_stricmp((*I)->m_Name.c_str(), norm_name)))
         return m_PGDs.end();
     return I;
 #endif
@@ -270,6 +282,7 @@ bool CPSLibrary::Load(const char* nm)
     for (PS::PEDIt e_it = m_PEDs.begin(); e_it != m_PEDs.end(); ++e_it)
         (*e_it)->CreateShader();
 
+    Msg("[PSLibrary] Loaded %zu PEDs, %zu PGDs from '%s' (success=%d)", m_PEDs.size(), m_PGDs.size(), nm, bRes);
     return bRes;
 }
 //----------------------------------------------------

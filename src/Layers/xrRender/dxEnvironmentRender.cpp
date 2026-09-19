@@ -251,11 +251,8 @@ void dxEnvironmentRender::RenderSky(CEnvironment& env)
     RCache.set_xform_world(mSky);
     RCache.set_Geometry(sh_2geom);
     RCache.set_Shader(sh_2sky);
-#if defined(USE_DX11)
+#if defined(USE_DX11) || defined(USE_OGL)
     RCache.set_Textures(&sky_r_textures);
-#elif defined(USE_OGL)
-    if (HW.Caps.geometry.bVTF)
-        RCache.set_Textures(&sky_r_textures);
 #else
 #   error No graphics API selected or enabled!
 #endif

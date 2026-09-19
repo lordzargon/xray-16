@@ -32,12 +32,20 @@ bool CBreakableObject::net_Spawn(CSE_Abstract* DC)
 {
     CSE_Abstract* e = (CSE_Abstract*)(DC);
     CSE_ALifeObjectBreakable* obj = smart_cast<CSE_ALifeObjectBreakable*>(e);
-    R_ASSERT(obj);
-    inherited::net_Spawn(DC);
+    if (!obj)
+        return false;
+
+    if (!inherited::net_Spawn(DC))
+        return false;
+
+    if (!Visual() || !smart_cast<IKinematics*>(Visual()))
+    {
+        Msg("! [CBreakableObject::net_Spawn] Missing or invalid visual for breakable object '%s'", e->s_name.c_str());
+        return false;
+    }
+
     VERIFY(!CForm);
     CForm = xr_new<CCF_Skeleton>(this);
-    // set bone id
-    R_ASSERT(Visual() && smart_cast<IKinematics*>(Visual()));
     //	IKinematics* K			= smart_cast<IKinematics*>(Visual());
     fHealth = obj->m_health;
     processing_deactivate();

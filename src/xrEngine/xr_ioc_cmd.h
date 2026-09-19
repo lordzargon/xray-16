@@ -83,6 +83,11 @@ public:
     virtual void add_to_LRU(shared_str const& arg);
     void add_LRU_to_tips(vecTips& tips);
 
+    virtual bool GetBool() const { return false; }
+    virtual float GetFloat(float& /*min*/, float& /*max*/) const { return 0.0f; }
+    virtual int GetInteger(int& /*min*/, int& /*max*/) const { return 0; }
+    virtual const xr_token* GetToken() noexcept { return nullptr; }
+    virtual Fvector* GetFVectorPtr() { return nullptr; }
 }; // class IConsole_Command
 
 class ENGINE_API CCC_Mask : public IConsole_Command
@@ -94,6 +99,8 @@ protected:
 public:
     CCC_Mask(pcstr N, Flags32* V, u32 M) : IConsole_Command(N), value(V), mask(M){};
     bool GetValue() const { return value->test(mask); }
+    bool GetBool() const override { return GetValue(); }
+    int GetInteger(int& min_val, int& max_val) const override { min_val = 0; max_val = 1; return GetValue() ? 1 : 0; }
     virtual void Execute(pcstr args)
     {
         if (EQ(args, "on"))
@@ -126,6 +133,8 @@ protected:
 public:
     CCC_ToggleMask(pcstr N, Flags32* V, u32 M) : IConsole_Command(N), value(V), mask(M) { bEmptyArgsHandled = true; }
     bool GetValue() const { return value->test(mask); }
+    bool GetBool() const override { return GetValue(); }
+    int GetInteger(int& min_val, int& max_val) const override { min_val = 0; max_val = 1; return GetValue() ? 1 : 0; }
     virtual void Execute(pcstr /*args*/)
     {
         value->set(mask, !GetValue());
@@ -211,7 +220,7 @@ public:
             tok++;
         }
     }
-    virtual const xr_token* GetToken() noexcept { return tokens; }
+    virtual const xr_token* GetToken() noexcept override { return tokens; }
     virtual void fill_tips(vecTips& tips, u32 /*mode*/)
     {
         TStatus str;
@@ -255,6 +264,7 @@ public:
         fmin = min;
         fmax = max;
     }
+    float GetFloat(float& fmin, float& fmax) const override { GetBounds(fmin, fmax); return GetValue(); }
 
     virtual void Execute(pcstr args)
     {
@@ -294,6 +304,7 @@ public:
     };
     const Fvector GetValue() const { return *value; }
     Fvector* GetValuePtr() const { return value; }
+    Fvector* GetFVectorPtr() override { return GetValuePtr(); }
     virtual void Execute(pcstr args)
     {
         Fvector v;
@@ -408,6 +419,8 @@ public:
         imin = min;
         imax = max;
     }
+    bool GetBool() const override { return GetValue() != 0; }
+    int GetInteger(int& imin, int& imax) const override { GetBounds(imin, imax); return GetValue(); }
 
     CCC_Integer(pcstr N, int* V, int _min = 0, int _max = 999) : IConsole_Command(N), value(V), min(_min), max(_max){}
 

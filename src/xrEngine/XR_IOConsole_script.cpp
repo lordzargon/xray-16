@@ -9,10 +9,13 @@ void CConsole::script_register(lua_State* luaState)
 {
     using namespace luabind;
 
+    Msg("* [CConsole::script_register] Registering CConsole, Console=%p", Console);
+
     module(luaState)
     [
         def("get_console", +[]()
         {
+            Msg("* [LUA] get_console() called, returning Console=%p", Console);
             return Console;
         }),
 

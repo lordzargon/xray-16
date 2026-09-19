@@ -11,6 +11,7 @@
 #include "xrEngine/Engine.h"
 
 class IGame_Persistent;
+class IGameObject;
 
 class XR_NOVTABLE IFactoryObject
 {
@@ -18,6 +19,7 @@ public:
     virtual ~IFactoryObject() = 0;
     virtual CLASS_ID& GetClassId() = 0;
     virtual IFactoryObject* _construct() = 0;
+    virtual IGameObject* dcast_GameObject() { return nullptr; }
 };
 
 inline IFactoryObject::~IFactoryObject() = default;
@@ -32,6 +34,7 @@ public:
     FactoryObjectBase() { CLS_ID = 0; }
     virtual CLASS_ID& GetClassId() override { return CLS_ID; }
     virtual IFactoryObject* _construct() override { return IFactoryObject::_construct(); }
+    virtual IGameObject* dcast_GameObject() override { return nullptr; }
 };
 
 // Class creation/destroying interface

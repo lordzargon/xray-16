@@ -18,12 +18,10 @@ void CObjectFactory::register_script_class(LPCSTR client_class, LPCSTR server_cl
 {
     ZoneScoped;
 
-#ifdef CONFIG_OBJECT_FACTORY_LOG_REGISTER
-    Msg("* CObjectFactory: registering script class '%s'", clsid);
-#endif
     luabind::object client;
     if (!GEnv.ScriptEngine->function_object(client_class, client, LUA_TUSERDATA))
     {
+        Msg("! [CObjectFactory] Cannot register class '%s' (client_class function_object failed)!", client_class);
         GEnv.ScriptEngine->script_log(LuaMessageType::Error, "Cannot register class %s", client_class);
         return;
     }
@@ -31,10 +29,13 @@ void CObjectFactory::register_script_class(LPCSTR client_class, LPCSTR server_cl
     luabind::object server;
     if (!GEnv.ScriptEngine->function_object(server_class, server, LUA_TUSERDATA))
     {
+        Msg("! [CObjectFactory] Cannot register class '%s' (server_class function_object failed)!", server_class);
         GEnv.ScriptEngine->script_log(LuaMessageType::Error, "Cannot register class %s", server_class);
         return;
     }
 
+    Msg("* [CObjectFactory] Registered script class: client='%s', server='%s', clsid='%s', script_clsid='%s'",
+        client_class, server_class, clsid, script_clsid);
     add(xr_new<CObjectItemScript>(client, server, TEXT2CLSID(clsid), script_clsid));
 }
 
@@ -42,15 +43,15 @@ void CObjectFactory::register_script_class(LPCSTR unknown_class, LPCSTR clsid, L
 {
     ZoneScoped;
 
-#ifdef CONFIG_OBJECT_FACTORY_LOG_REGISTER
-    Msg("* CObjectFactory: registering script class '%s'", clsid);
-#endif
     luabind::object creator;
     if (!GEnv.ScriptEngine->function_object(unknown_class, creator, LUA_TUSERDATA))
     {
+        Msg("! [CObjectFactory] Cannot register single class '%s' (clsid='%s', function_object failed)!", unknown_class, clsid);
         GEnv.ScriptEngine->script_log(LuaMessageType::Error, "Cannot register class %s", unknown_class);
         return;
     }
+    Msg("* [CObjectFactory] Registered single script class: '%s', clsid='%s', script_clsid='%s'",
+        unknown_class, clsid, script_clsid);
     add(xr_new<CObjectItemScript>(creator, creator, TEXT2CLSID(clsid), script_clsid));
 }
 

@@ -76,9 +76,12 @@ bool CLevel::Load_GameSpecific_After()
             if ((g_pGamePersistent->m_game_params.m_e_game_type & EGameIDs(gametype_usage)) || (ver == 0))
             {
                 pStaticParticles = CParticlesObject::Create(ref_name, FALSE, false);
-                pStaticParticles->UpdateParent(transform, zero_vel);
-                pStaticParticles->Play(false);
-                m_StaticParticles.push_back(pStaticParticles);
+                if (pStaticParticles)
+                {
+                    pStaticParticles->UpdateParent(transform, zero_vel);
+                    pStaticParticles->Play(false);
+                    m_StaticParticles.push_back(pStaticParticles);
+                }
             }
         }
         FS.r_close(F);

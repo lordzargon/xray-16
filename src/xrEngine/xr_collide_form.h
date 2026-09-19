@@ -83,7 +83,7 @@ enum ECollisionFormType
 // Class : CXR_CFObject
 // Purpose : stores collision form
 //----------------------------------------------------------------------
-class ICollisionForm
+class ENGINE_API ICollisionForm
 {
     friend class CObjectSpace;
 

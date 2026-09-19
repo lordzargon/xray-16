@@ -143,9 +143,15 @@ void xrDebug::LogStackTrace(const char* header)
 {
     xr_vector<xr_string> stackTrace = BuildStackTrace();
     Msg("%s", header);
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_ERROR, "OpenXRay", "%s", header);
+#endif
     for (const auto& frame : stackTrace)
     {
         Msg("%s", frame.c_str());
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "OpenXRay", "  %s", frame.c_str());
+#endif
     }
 }
 
@@ -192,6 +198,9 @@ void xrDebug::GatherInfo(char* assertionInfo, size_t bufferSize, const ErrorLoca
 
     Log(assertionInfo);
     FlushLog();
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_ERROR, "OpenXRay", "%s", assertionInfo);
+#endif
 
     buffer = assertionInfo;
 #if defined(XR_PLATFORM_WINDOWS)
@@ -203,14 +212,19 @@ void xrDebug::GatherInfo(char* assertionInfo, size_t bufferSize, const ErrorLoca
     buffer += xr_sprintf(buffer, oneAboveBuffer - buffer, "stack trace:\n\n");
 
     xr_vector<xr_string> stackTrace = BuildStackTrace();
-    for (size_t i = 2; i < stackTrace.size(); i++)
+    for (size_t i = 0; i < stackTrace.size(); i++)
     {
         Log(stackTrace[i].c_str());
         buffer += xr_sprintf(buffer, oneAboveBuffer - buffer, "%s\n", stackTrace[i].c_str());
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "OpenXRay", "  %s", stackTrace[i].c_str());
+#endif
     }
 
     FlushLog();
+#if !defined(__ANDROID__)
     os_clipboard::copy_to_clipboard(assertionInfo);
+#endif
 }
 
 void xrDebug::Fatal(const ErrorLocation& loc, const char* format, ...)
@@ -241,6 +255,10 @@ AssertionResult xrDebug::Fail(bool& ignoreAlways, const ErrorLocation& loc, cons
     ErrorAfterDialog = true;
     string4096 assertionInfo;
     GatherInfo(assertionInfo, sizeof(assertionInfo), loc, expr, desc, arg1, arg2);
+
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_ERROR, "OpenXRay", "ASSERTION FAILED:\n%s", assertionInfo);
+#endif
 
     if (ShowErrorMessage)
     {
@@ -599,11 +617,49 @@ void xr_terminate()
 #endif
     //ScopeLock lock(&failLock);
 
+    std::exception_ptr p = std::current_exception();
+    if (p)
+    {
+        try
+        {
+            std::rethrow_exception(p);
+        }
+        catch (const std::exception& e)
+        {
+            Msg("! [xr_terminate] Unhandled std::exception: '%s' (type: %s)", e.what(), typeid(e).name());
+#if defined(__ANDROID__)
+            __android_log_print(ANDROID_LOG_ERROR, "OpenXRay", "! [xr_terminate] Unhandled std::exception: '%s' (type: %s)", e.what(), typeid(e).name());
+#endif
+        }
+        catch (...)
+        {
+            Msg("! [xr_terminate] Unhandled non-std exception!");
+#if defined(__ANDROID__)
+            __android_log_print(ANDROID_LOG_ERROR, "OpenXRay", "! [xr_terminate] Unhandled non-std exception!");
+#endif
+        }
+    }
+    else
+    {
+        Msg("! [xr_terminate] Called without active std::current_exception");
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "OpenXRay", "! [xr_terminate] Called without active std::current_exception");
+#endif
+    }
+
+    xrDebug::LogStackTrace("! [xr_terminate] Call stack at termination:");
+    FlushLog();
+
     string4096 assertionInfo;
     xrDebug::GatherInfo(assertionInfo,sizeof(assertionInfo), DEBUG_INFO, nullptr, "Unexpected application termination");
     xr_strcat(assertionInfo, "Press OK to abort execution\r\n");
+    FlushLog();
+#if defined(XR_PLATFORM_LINUX) || defined(__ANDROID__)
+    abort();
+#else
     xrDebug::ShowMessage("Fatal Error", assertionInfo);
     exit(-1);
+#endif
 }
 #endif // USE_BUG_TRAP
 

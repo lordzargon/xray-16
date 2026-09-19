@@ -7,7 +7,7 @@ class IKinematicsAnimated;
 class IParticleCustom;
 struct vis_data;
 
-class XR_NOVTABLE IRenderVisual
+class XR_EXPORT XR_NOVTABLE IRenderVisual
 {
 public:
     virtual ~IRenderVisual() = 0;

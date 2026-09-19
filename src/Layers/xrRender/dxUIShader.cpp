@@ -14,20 +14,42 @@ bool dxUIShader::operator==(const IUIShader& other) const
 
 CTexture* dxUIShader::GetBaseTexture() const
 {
-    if (!hShader)
+    if (!hShader || !hShader->E[0])
         return nullptr;
 
-    const SPass& pass = *hShader->E[0]->passes[0];
-    if (!pass.T)
+    if (hShader->E[0]->passes.empty())
         return nullptr;
 
-    const STextureList& textures = *pass.T;
+    const SPass* pass = hShader->E[0]->passes[0]._get();
+    if (!pass || !pass->T)
+        return nullptr;
+
+    const STextureList& textures = *pass->T;
     if (textures.empty())
         return nullptr;
 
-    const R_constant* sbase = pass.constants->get(baseTexture)._get();
+    if (pass->constants)
+    {
+        const R_constant* sbase = pass->constants->get(baseTexture)._get();
+        if (sbase)
+        {
+            for (const auto& [stage, texture] : textures)
+            {
+                if (stage == sbase->samp.index && texture)
+                    return texture._get();
+            }
+            if (sbase->samp.index < textures.size() && textures[sbase->samp.index].second)
+                return textures[sbase->samp.index].second._get();
+        }
+    }
 
-    return textures[sbase ? sbase->samp.index : 0].second._get();
+    for (const auto& [stage, texture] : textures)
+    {
+        if (texture)
+            return texture._get();
+    }
+
+    return nullptr;
 }
 
 xrImTextureData dxUIShader::GetImGuiTextureId()
@@ -35,6 +57,9 @@ xrImTextureData dxUIShader::GetImGuiTextureId()
     const auto texture = GetBaseTexture();
     if (!texture)
         return {};
+
+    if (!texture->flags.bLoaded)
+        texture->Load();
 
     return
     {
@@ -54,6 +79,9 @@ bool dxUIShader::GetBaseTextureResolution(Fvector2& res)
         res = {};
         return false;
     }
+
+    if (!texture->flags.bLoaded)
+        texture->Load();
 
     res = { float(texture->get_Width()), float(texture->get_Height()) };
     return true;

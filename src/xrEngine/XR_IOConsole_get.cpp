@@ -12,18 +12,7 @@
 bool CConsole::GetBool(pcstr cmd) const
 {
     IConsole_Command* cc = GetCommand(cmd);
-    CCC_Mask* cf = dynamic_cast<CCC_Mask*>(cc);
-    if (cf)
-    {
-        return (cf->GetValue() != 0);
-    }
-
-    CCC_Integer* ci = dynamic_cast<CCC_Integer*>(cc);
-    if (ci)
-    {
-        return (ci->GetValue() != 0);
-    }
-    return false;
+    return cc ? cc->GetBool() : false;
 }
 
 float CConsole::GetFloat(pcstr cmd, float& min, float& max) const
@@ -31,13 +20,7 @@ float CConsole::GetFloat(pcstr cmd, float& min, float& max) const
     min = 0.0f;
     max = 0.0f;
     IConsole_Command* cc = GetCommand(cmd);
-    CCC_Float* cf = dynamic_cast<CCC_Float*>(cc);
-    if (cf)
-    {
-        cf->GetBounds(min, max);
-        return cf->GetValue();
-    }
-    return 0.0f;
+    return cc ? cc->GetFloat(min, max) : 0.0f;
 }
 
 IConsole_Command* CConsole::GetCommand(pcstr cmd) const
@@ -54,21 +37,7 @@ int CConsole::GetInteger(pcstr cmd, int& min, int& max) const
     min = 0;
     max = 1;
     IConsole_Command* cc = GetCommand(cmd);
-
-    CCC_Integer* cf = dynamic_cast<CCC_Integer*>(cc);
-    if (cf)
-    {
-        cf->GetBounds(min, max);
-        return cf->GetValue();
-    }
-    CCC_Mask* cm = dynamic_cast<CCC_Mask*>(cc);
-    if (cm)
-    {
-        min = 0;
-        max = 1;
-        return (cm->GetValue()) ? 1 : 0;
-    }
-    return 0;
+    return cc ? cc->GetInteger(min, max) : 0;
 }
 
 pcstr CConsole::GetString(pcstr cmd) const
@@ -86,24 +55,13 @@ pcstr CConsole::GetToken(pcstr cmd) const { return GetString(cmd); }
 const xr_token* CConsole::GetXRToken(pcstr cmd) const
 {
     IConsole_Command* cc = GetCommand(cmd);
-
-    CCC_Token* cf = dynamic_cast<CCC_Token*>(cc);
-    if (cf)
-    {
-        return cf->GetToken();
-    }
-    return NULL;
+    return cc ? cc->GetToken() : nullptr;
 }
 
 Fvector* CConsole::GetFVectorPtr(pcstr cmd) const
 {
     IConsole_Command* cc = GetCommand(cmd);
-    CCC_Vector3* cf = dynamic_cast<CCC_Vector3*>(cc);
-    if (cf)
-    {
-        return cf->GetValuePtr();
-    }
-    return NULL;
+    return cc ? cc->GetFVectorPtr() : nullptr;
 }
 
 Fvector CConsole::GetFVector(pcstr cmd) const
@@ -115,3 +73,4 @@ Fvector CConsole::GetFVector(pcstr cmd) const
     }
     return Fvector().set(0.0f, 0.0f, 0.0f);
 }
+

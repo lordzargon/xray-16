@@ -339,9 +339,8 @@ void D3DXRenderBase::SetCacheXform(Fmatrix& mView, Fmatrix& mProject)
 
 bool D3DXRenderBase::HWSupportsShaderYUV2RGB()
 {
-    u32 v_dev = CAP_VERSION(HW.Caps.raster_major, HW.Caps.raster_minor);
-    u32 v_need = CAP_VERSION(2, 0);
-    return v_dev >= v_need;
+    // Shaders for YUV2RGB are not hooked up to UI/scene materials; Theora frames must be decoded to RGB in software
+    return false;
 }
 
 void D3DXRenderBase::OnAssetsChanged()

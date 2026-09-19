@@ -687,7 +687,11 @@ void CRender::model_Delete(IRender_DetailModel*& F)
 IRenderVisual* CRender::model_CreatePE(LPCSTR name)
 {
     PS::CPEDef* SE = PSLibrary.FindPED(name);
-    R_ASSERT3(SE, "Particle effect doesn't exist", name);
+    if (!SE)
+    {
+        Msg("! Particle effect doesn't exist: '%s'", name ? name : "<null>");
+        return nullptr;
+    }
     return Models->CreatePE(SE);
 }
 
@@ -698,7 +702,11 @@ IRenderVisual* CRender::model_CreateParticles(LPCSTR name)
         return Models->CreatePE(SE);
 
     PS::CPGDef* SG = PSLibrary.FindPGD(name);
-    R_ASSERT3(SG, "Particle effect or group doesn't exist", name);
+    if (!SG)
+    {
+        Msg("! Particle effect or group doesn't exist: '%s'", name ? name : "<null>");
+        return nullptr;
+    }
     return Models->CreatePG(SG);
 }
 void CRender::models_Prefetch() { Models->Prefetch(); }

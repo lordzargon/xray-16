@@ -24,7 +24,7 @@ struct xform_animation : public color_animation
     Fvector2 m_origSize{};
 };
 
-class CUILightAnimColorConroller
+class XRUICORE_API CUILightAnimColorConroller
 {
 public:
     virtual bool IsColorAnimationPresent() = 0;
@@ -34,7 +34,7 @@ public:
     virtual void ColorAnimationSetTextColor(u32 color, bool only_alpha){};
 };
 
-class CUILightAnimColorConrollerImpl : public CUILightAnimColorConroller
+class XRUICORE_API CUILightAnimColorConrollerImpl : public CUILightAnimColorConroller
 {
     color_animation m_lanim_clr;
 

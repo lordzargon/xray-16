@@ -234,7 +234,6 @@ bool CTheoraStream::Decode(u32 in_tm_play)
         VERIFY(true == result);
         VERIFY(d_frame == t_frame);
         theora_decode_YUVout(&t_state, &t_yuv_buffer);
-        //. dbg_log ((stderr,"%04d: yuv out\n",d_frame));
         return true;
     }
     return false;

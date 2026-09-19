@@ -45,7 +45,7 @@ void* ModuleHandle::Open(pcstr moduleName)
     pcstr error = nullptr;
 #if defined(XR_PLATFORM_LINUX) || defined(XR_PLATFORM_BSD)
     // For platforms that use rpath we have to call dlopen() from our own module
-    handle = dlopen(buf.c_str(), RTLD_NOW);
+    handle = dlopen(buf.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (!handle)
         error = dlerror();
 #else

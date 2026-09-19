@@ -56,6 +56,8 @@ CPhysicsShell* P_build_Shell(
     // IKinematics* pKinematics=smart_cast<IKinematics*>(V);
     // IKinematics* pKinematics	=  V->dcast_PKinematics			();
     IKinematics* pKinematics = obj->ObjectKinematics();
+    if (!pKinematics)
+        return nullptr;
 
     CPhysicsShell* pPhysicsShell = P_create_Shell();
 #ifdef DEBUG
@@ -96,6 +98,8 @@ CPhysicsShell* P_build_Shell(
     CPhysicsShell* pPhysicsShell = 0;
     // IKinematics* pKinematics=smart_cast<IKinematics*>(obj->ObjectVisual());
     IKinematics* pKinematics = obj->ObjectKinematics();
+    if (!pKinematics)
+        return nullptr;
     if (fixed_bones)
     {
         int count = _GetItemCount(fixed_bones);
@@ -114,6 +118,9 @@ CPhysicsShell* P_build_Shell(
     }
     else
         pPhysicsShell = P_build_Shell(obj, not_active_state);
+
+    if (!pPhysicsShell)
+        return nullptr;
 
     auto i = p_bone_map->begin(), e = p_bone_map->end();
     if (i != e)
@@ -135,6 +142,8 @@ CPhysicsShell* P_build_Shell(IPhysicsShellHolder* obj, bool not_active_state, LP
     {
         // IKinematics* K		= smart_cast<IKinematics*>(obj->ObjectVisual());
         IKinematics* K = obj->ObjectKinematics();
+        if (!K)
+            return nullptr;
         VERIFY(K);
         int count = _GetItemCount(fixed_bones);
         for (int i = 0; i < count; ++i)
@@ -157,6 +166,8 @@ CPhysicsShell* P_build_Shell(IPhysicsShellHolder* obj, bool not_active_state, xr
         for (auto it = fixed_bones.begin(); it != fixed_bones.end(); ++it)
             bone_map.insert(std::make_pair(*it, physicsBone()));
     pPhysicsShell = P_build_Shell(obj, not_active_state, &bone_map);
+    if (!pPhysicsShell)
+        return nullptr;
 
     // fix bones
     auto i = bone_map.begin(), e = bone_map.end();

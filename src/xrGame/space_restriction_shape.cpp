@@ -89,8 +89,18 @@ void CSpaceRestrictionShape::fill_shape(const CCF_Shape::shape_def& shape)
 void CSpaceRestrictionShape::build_border()
 {
     m_border.clear();
-    CCF_Shape* shape = smart_cast<CCF_Shape*>(m_restrictor->GetCForm());
-    VERIFY(shape);
+    ICollisionForm* cform = m_restrictor ? m_restrictor->GetCForm() : nullptr;
+    if (!cform)
+    {
+        Msg("! [CSpaceRestrictionShape::build_border] Restrictor '%s' has no CForm", m_restrictor ? m_restrictor->cName().c_str() : "unknown");
+        return;
+    }
+    CCF_Shape* shape = (cform->Type() == cftShape) ? static_cast<CCF_Shape*>(cform) : nullptr;
+    if (!shape)
+    {
+        Msg("! [CSpaceRestrictionShape::build_border] Restrictor '%s' CForm is not shape (Type=%d)", m_restrictor->cName().c_str(), cform->Type());
+        return;
+    }
     xr_vector<CCF_Shape::shape_def>::const_iterator I = shape->Shapes().begin();
     xr_vector<CCF_Shape::shape_def>::const_iterator E = shape->Shapes().end();
     for (; I != E; ++I)
@@ -102,7 +112,10 @@ void CSpaceRestrictionShape::build_border()
 
     process_borders();
 
-    VERIFY3(!border().empty(), "space restrictor has no border", m_restrictor->cName().c_str());
+    if (border().empty())
+    {
+        Msg("! [CSpaceRestrictionShape::build_border] Space restrictor '%s' has empty border", m_restrictor->cName().c_str());
+    }
 
 #ifdef DEBUG
     test_correctness();

@@ -681,11 +681,15 @@ bool CActor::net_Spawn(CSE_Abstract* DC)
             }
         }
     */
+    Msg("- [CActor::net_Spawn] 1. SetDefaultVisualOutfit");
     SetDefaultVisualOutfit(cNameVisual());
 
-    smart_cast<IKinematics*>(Visual())->CalculateBones();
+    Msg("- [CActor::net_Spawn] 2. CalculateBones");
+    if (Visual() && smart_cast<IKinematics*>(Visual()))
+        smart_cast<IKinematics*>(Visual())->CalculateBones();
 
     //--------------------------------------------------------------
+    Msg("- [CActor::net_Spawn] 3. SetPrevActiveSlot");
     inventory().SetPrevActiveSlot(NO_ACTIVE_SLOT);
 
     //-------------------------------------
@@ -696,7 +700,8 @@ bool CActor::net_Spawn(CSE_Abstract* DC)
         mstate_wishful &= ~mcAnyMove;
         mstate_real &= ~mcAnyMove;
         IKinematicsAnimated* K = smart_cast<IKinematicsAnimated*>(Visual());
-        K->PlayCycle("death_init");
+        if (K && K->ID_Cycle_Safe("death_init"))
+            K->PlayCycle("death_init");
 
         m_HeavyBreathSnd.stop();
     }
@@ -718,12 +723,16 @@ bool CActor::net_Spawn(CSE_Abstract* DC)
 
     if (IsGameTypeSingle())
     {
+        Msg("- [CActor::net_Spawn] 4. AddMapLocation actor_location");
         Level().MapManager().AddMapLocation("actor_location", ID());
+        Msg("- [CActor::net_Spawn] 5. AddMapLocation actor_location_p");
         Level().MapManager().AddMapLocation("actor_location_p", ID());
 
+        Msg("- [CActor::net_Spawn] 6. CActorStatisticMgr");
         m_statistic_manager = xr_new<CActorStatisticMgr>();
     }
 
+    Msg("- [CActor::net_Spawn] 7. STYPE_REACTTOSOUND");
     spatial.type |= STYPE_REACTTOSOUND;
     psHUD_Flags.set(HUD_WEAPON_RT, TRUE);
     psHUD_Flags.set(HUD_WEAPON_RT2, TRUE);
@@ -732,6 +741,7 @@ bool CActor::net_Spawn(CSE_Abstract* DC)
     {
         setLocal(FALSE);
     };
+    Msg("- [CActor::net_Spawn] 8. return true - Actor successfully spawned!");
     return true;
 }
 

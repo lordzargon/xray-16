@@ -129,7 +129,11 @@ void CScriptEngine::reinit()
         lua_close(m_virtual_machine);
         UnregisterState(m_virtual_machine);
     }
+#if defined(__ANDROID__)
+    m_virtual_machine = luaL_newstate();
+#else
     m_virtual_machine = lua_newstate(lua_alloc, nullptr);
+#endif
     if (!m_virtual_machine)
     {
         Log("! ERROR : Cannot initialize script virtual machine!");
@@ -469,12 +473,22 @@ bool CScriptEngine::object(LPCSTR identifier, int type)
     lua_pushnil(lua());
     while (lua_next(lua(), -2))
     {
-        if (lua_type(lua(), -1) == type && !xr_strcmp(identifier, lua_tostring(lua(), -2)))
+        cpcstr key_str = lua_tostring(lua(), -2);
+        if (key_str && !xr_strcmp(identifier, key_str))
         {
-            VERIFY(lua_gettop(lua()) >= 3);
-            lua_pop(lua(), 3);
-            VERIFY(lua_gettop(lua()) == start - 1);
-            return true;
+            int actual_type = lua_type(lua(), -1);
+            if (actual_type == type)
+            {
+                VERIFY(lua_gettop(lua()) >= 3);
+                lua_pop(lua(), 3);
+                VERIFY(lua_gettop(lua()) == start - 1);
+                return true;
+            }
+            else
+            {
+                Msg("! [CScriptEngine::object] identifier '%s' matched but type mismatch: expected %d (%s), actual %d (%s)",
+                    identifier, type, lua_typename(lua(), type), actual_type, lua_typename(lua(), actual_type));
+            }
         }
         lua_pop(lua(), 1);
     }
@@ -551,6 +565,8 @@ bool CScriptEngine::print_output(lua_State* L, pcstr caScriptFileName, int error
     {
         if (!errorCode)
             scriptEngine->script_log(LuaMessageType::Info, "Output from %s", caScriptFileName);
+        else
+            scriptEngine->script_log(LuaMessageType::Error, "%s", S);
 #if defined(USE_DEBUGGER)
         if (scriptEngine->debugger() && scriptEngine->debugger()->Active())
         {
@@ -664,7 +680,9 @@ void CScriptEngine::lua_error(lua_State* L)
     print_output(L, "", LUA_ERRRUN);
     on_error(L);
 
-#if !XRAY_EXCEPTIONS
+    Msg("! [CScriptEngine::lua_error] %s", lua_isstring(L, -1) ? lua_tostring(L, -1) : "(non-string)");
+
+#if !XRAY_EXCEPTIONS || defined(LUABIND_NO_EXCEPTIONS)
     xrDebug::Fatal(DEBUG_INFO, "LUA error: %s", lua_tostring(L, -1));
 #else
     throw lua_tostring(L, -1);
@@ -673,6 +691,12 @@ void CScriptEngine::lua_error(lua_State* L)
 
 int CScriptEngine::lua_pcall_failed(lua_State* L)
 {
+    const char* err = lua_isstring(L, -1) ? lua_tostring(L, -1) : "(unknown)";
+    luaL_traceback(L, L, err, 0);
+    const char* traceback = lua_tostring(L, -1);
+    Msg("! [LUA TRACEBACK]\n%s", traceback ? traceback : "(null)");
+    lua_pop(L, 1);
+
     print_output(L, "", LUA_ERRRUN);
     on_error(L);
 
@@ -692,12 +716,13 @@ int CScriptEngine::lua_pcall_failed(lua_State* L)
     return LUA_ERRRUN;
 }
 
-#if !XRAY_EXCEPTIONS
+#if !XRAY_EXCEPTIONS || defined(LUABIND_NO_EXCEPTIONS)
 void CScriptEngine::lua_cast_failed(lua_State* L, const luabind::type_id& info)
 {
     string128 buf;
     xr_sprintf(buf, "cannot cast lua value to %s", info.name());
     print_output(L, "", LUA_ERRRUN, buf);
+    Msg("! [CScriptEngine::lua_cast_failed] %s", buf);
     xrDebug::Fatal(DEBUG_INFO, "LUA error: cannot cast lua value to %s", info.name());
 }
 #endif
@@ -711,13 +736,13 @@ void CScriptEngine::setup_callbacks()
     if (!debugger() || !debugger()->Active())
 #endif
     {
-#if !XRAY_EXCEPTIONS
+#if !XRAY_EXCEPTIONS || defined(LUABIND_NO_EXCEPTIONS)
         luabind::set_error_callback(CScriptEngine::lua_error);
 #endif
 
         luabind::set_pcall_callback([](lua_State* L) { lua_pushcfunction(L, CScriptEngine::lua_pcall_failed); });
     }
-#if !XRAY_EXCEPTIONS
+#if !XRAY_EXCEPTIONS || defined(LUABIND_NO_EXCEPTIONS)
     luabind::set_cast_failed_callback(CScriptEngine::lua_cast_failed);
 #endif
     lua_atpanic(lua(), CScriptEngine::lua_panic);
@@ -786,6 +811,11 @@ void CScriptEngine::init(export_func exporter, bool loadGlobalNamespace)
     ZoneScoped;
 
     reinit();
+    if (!lua())
+    {
+        Log("! ERROR : CScriptEngine::init failed because Lua VM is null!");
+        return;
+    }
     luabind::open(lua());
 
     // Workarounds to preserve backwards compatibility with game scripts
@@ -937,13 +967,7 @@ bool CScriptEngine::process_file_if_exists(LPCSTR file_name, bool warn_if_not_ex
         FS.update_path(S, "$game_scripts$", strconcat(sizeof(S1), S1, file_name, ".script"));
         if (!warn_if_not_exist && !FS.exist(S))
         {
-#ifdef DEBUG
-            if (false) // XXX: restore (check script engine flags)
-            {
-                print_stack();
-                Msg("! WARNING: Access to nonexistent variable '%s' or loading nonexistent script '%s'", file_name, S1);
-            }
-#endif
+            Msg("! [CScriptEngine::process_file_if_exists] Script file '%s' not found (path: '%s')!", S1, S);
             add_no_file(file_name, string_length);
             return false;
         }

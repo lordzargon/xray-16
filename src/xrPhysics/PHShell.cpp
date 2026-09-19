@@ -544,6 +544,8 @@ void CPHShell::addEquelInertiaToEls(const dMass& M)
 static BONE_P_MAP* spGetingMap = nullptr;
 void CPHShell::build_FromKinematics(IKinematics* K, BONE_P_MAP* p_geting_map)
 {
+    if (!K)
+        return;
     VERIFY(K);
     phys_shell_verify_model(*K);
     m_pKinematics = K;
@@ -562,6 +564,8 @@ void CPHShell::build_FromKinematics(IKinematics* K, BONE_P_MAP* p_geting_map)
 
 void CPHShell::preBuild_FromKinematics(IKinematics* K, BONE_P_MAP* p_geting_map)
 {
+    if (!K)
+        return;
     VERIFY(K);
     phys_shell_verify_model(*K);
     m_pKinematics = K;

@@ -87,7 +87,7 @@ void CUIGameLog::Update()
     {
         CUILightAnimColorConroller* pItem = smart_cast<CUILightAnimColorConroller*>(*it);
 
-        if (!pItem->IsColorAnimationPresent())
+        if (pItem && !pItem->IsColorAnimationPresent())
             toDelList.push_back(*it);
     }
 

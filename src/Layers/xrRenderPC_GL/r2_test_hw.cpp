@@ -38,11 +38,17 @@ BOOL xrRender_test_hw()
 {
     ZoneScoped;
 
+#if defined(__ANDROID__)
+    // On Android, SDL only manages the single primary NativeActivity surface window.
+    // Secondary hidden windows cannot be created by the display subsystem.
+    return TRUE;
+#else
     // Check if minimal required OpenGL features are available
     const sdl_window_test_helper windowTest;
     if (windowTest.successful())
         return TRUE;
 
     return FALSE;
+#endif
 }
 } // namespace xray::render::RENDER_NAMESPACE

@@ -100,10 +100,18 @@ inline void _splitpath(const char* path, // Path Input
 }
 
 #include <iostream>
+#if defined(__ANDROID__)
+#include <android/log.h>
+inline void OutputDebugString(const char *str)
+{
+    __android_log_print(ANDROID_LOG_INFO, "OpenXRay", "%s", str);
+}
+#else
 inline void OutputDebugString(const char *str) // for linux debugger
 {
     std::cerr << str;
 }
+#endif
 
 inline unsigned long GetLastError()
 {

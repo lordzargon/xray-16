@@ -44,11 +44,16 @@ void CRenderDevice::Initialize()
     TimerGlobal.Start();
     TimerMM.Start();
 
+    Msg("[OpenXRay] Device::Initialize: stage 1 start");
     {
-        Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIDDEN |
-            SDL_WINDOW_RESIZABLE;
+#if defined(__ANDROID__)
+        Uint32 flags = SDL_WINDOW_FULLSCREEN;
+#else
+        Uint32 flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE;
+#endif
 
         GEnv.Render->ObtainRequiredWindowFlags(flags);
+        Msg("[OpenXRay] Device::Initialize: stage 2 flags=0x%08x", flags);
 
         int icon = IDI_ICON_COP;
         pcstr title = "S.T.A.L.K.E.R.: Call of Pripyat";
@@ -64,24 +69,31 @@ void CRenderDevice::Initialize()
             title = "S.T.A.L.K.E.R.: Clear Sky";
         }
 
-        title = READ_IF_EXISTS(pSettingsOpenXRay, r_string_wb,
-            "window", "title", title).c_str();
-
         xr_strcpy(Core.ApplicationTitle, title);
         SetSDLSettings(title);
 
+        Msg("[OpenXRay] Device::Initialize: stage 3 calling SDL_CreateWindow");
+#if defined(__ANDROID__)
+        m_sdlWnd = SDL_CreateWindow(title, 0, 0, 0, 0, flags);
+#else
         m_sdlWnd = SDL_CreateWindow(title, 0, 0, 640, 480, flags);
+#endif
         R_ASSERT3(m_sdlWnd, "Unable to create SDL window", SDL_GetError());
+        Msg("[OpenXRay] Device::Initialize: stage 4 SDL_CreateWindow done: %p", m_sdlWnd);
 
+#if !defined(__ANDROID__)
         SDL_SetWindowHitTest(m_sdlWnd, WindowHitTest, nullptr);
         SDL_SetWindowMinimumSize(m_sdlWnd, 256, 192);
-        xrDebug::SetWindowHandler(this);
         ExtractAndSetWindowIcon(m_sdlWnd, icon);
+#endif
+        xrDebug::SetWindowHandler(this);
+        Msg("[OpenXRay] Device::Initialize: stage 5 WindowHandler set");
 
         TracySetProgramName(title);
     }
+    Msg("[OpenXRay] Device::Initialize: stage 6 inner block done");
 
-#ifdef IMGUI_ENABLE_VIEWPORTS
+#if defined(IMGUI_ENABLE_VIEWPORTS) && !defined(__ANDROID__)
     // Register main window handle (which is owned by the main application, not by us)
     // This is mostly for consistency, so that our code can use same logic for main and secondary viewports.
     {
@@ -89,23 +101,15 @@ void CRenderDevice::Initialize()
         main_viewport->PlatformUserData = IM_NEW(ImGuiViewportData){ m_sdlWnd };
         main_viewport->PlatformHandle = m_sdlWnd;
         main_viewport->PlatformHandleRaw = nullptr;
-        SDL_SysWMinfo info;
-        SDL_VERSION(&info.version);
-        if (SDL_GetWindowWMInfo(m_sdlWnd, &info))
-        {
-#if defined(SDL_VIDEO_DRIVER_WINDOWS)
-            main_viewport->PlatformHandleRaw = (void*)info.info.win.window;
-#elif defined(__APPLE__) && defined(SDL_VIDEO_DRIVER_COCOA)
-            main_viewport->PlatformHandleRaw = (void*)info.info.cocoa.window;
-#endif
-        }
     }
 #endif
 
     if (!GEnv.isDedicatedServer)
     {
+        Msg("[OpenXRay] Device::Initialize: stage 7 adding m_editor");
         seqFrame.Add(&m_editor, -5);
     }
+    Msg("[OpenXRay] Device::Initialize: stage 8 all done");
 }
 
 void CRenderDevice::DumpStatistics(IGameFont& font, IPerformanceAlert* alert)

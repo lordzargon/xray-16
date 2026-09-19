@@ -60,8 +60,13 @@ void CDamageManager::reload(LPCSTR section, LPCSTR line, CInifile const* ini)
 
 void CDamageManager::init_bones(LPCSTR section, CInifile const* ini)
 {
+    if (!m_object || !m_object->Visual())
+        return;
+
     IKinematics* kinematics = smart_cast<IKinematics*>(m_object->Visual());
-    VERIFY(kinematics);
+    if (!kinematics)
+        return;
+
     for (u16 i = 0; i < kinematics->LL_BoneCount(); i++)
     {
         CBoneInstance& bone_instance = kinematics->LL_GetBoneInstance(i);
@@ -72,14 +77,19 @@ void CDamageManager::init_bones(LPCSTR section, CInifile const* ini)
 }
 void CDamageManager::load_section(LPCSTR section, CInifile const* ini)
 {
-    string32 buffer;
+    if (!m_object || !m_object->Visual())
+        return;
+
     IKinematics* kinematics = smart_cast<IKinematics*>(m_object->Visual());
+    if (!kinematics)
+        return;
+
+    string32 buffer;
     CInifile::Sect& damages = ini->r_section(section);
     for (const auto & i : damages.Data)
     {
         if (xr_strcmp(i.first.c_str(), "default"))
         { // read all except default line
-            VERIFY(m_object);
             int bone = kinematics->LL_BoneID(i.first);
             R_ASSERT2(BI_NONE != bone, i.first.c_str());
             CBoneInstance& bone_instance = kinematics->LL_GetBoneInstance(u16(bone));

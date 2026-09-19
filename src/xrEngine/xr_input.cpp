@@ -207,16 +207,24 @@ void CInput::MouseUpdate()
 
         case SDL_MOUSEBUTTONDOWN:
         {
-            const auto idx = RemapIdx[event.button.button - 1];
-            mouseState[idx] = true;
-            cbStack.back()->IR_OnMousePress(IdxToKey[idx]);
+            if (event.button.button >= 1 && event.button.button <= (Uint8)COUNT_MOUSE_BUTTONS)
+            {
+                const auto idx = RemapIdx[event.button.button - 1];
+                mouseState[idx] = true;
+                if (!cbStack.empty())
+                    cbStack.back()->IR_OnMousePress(IdxToKey[idx]);
+            }
             break;
         }
         case SDL_MOUSEBUTTONUP:
         {
-            const auto idx = RemapIdx[event.button.button - 1];
-            mouseState[idx] = false;
-            cbStack.back()->IR_OnMouseRelease(IdxToKey[idx]);
+            if (event.button.button >= 1 && event.button.button <= (Uint8)COUNT_MOUSE_BUTTONS)
+            {
+                const auto idx = RemapIdx[event.button.button - 1];
+                mouseState[idx] = false;
+                if (!cbStack.empty())
+                    cbStack.back()->IR_OnMouseRelease(IdxToKey[idx]);
+            }
             break;
         }
         case SDL_MOUSEWHEEL:
@@ -229,19 +237,22 @@ void CInput::MouseUpdate()
         }
     }
 
-    for (int i = 0; i < MOUSE_COUNT; ++i)
+    if (!cbStack.empty())
     {
-        if (mouseState[i] && mousePrev[i])
-            cbStack.back()->IR_OnMouseHold(IdxToKey[i]);
-    }
+        for (int i = 0; i < MOUSE_COUNT; ++i)
+        {
+            if (mouseState[i] && mousePrev[i])
+                cbStack.back()->IR_OnMouseHold(IdxToKey[i]);
+        }
 
-    if (mouseMoved)
-    {
-        if (offs[0] || offs[1])
-            cbStack.back()->IR_OnMouseMove(offs[0], offs[1]);
+        if (mouseMoved)
+        {
+            if (offs[0] || offs[1])
+                cbStack.back()->IR_OnMouseMove(offs[0], offs[1]);
 
-        if (!fis_zero(scroll[0]) || !fis_zero(scroll[1]))
-            cbStack.back()->IR_OnMouseWheel(scroll[0], scroll[1]);
+            if (!fis_zero(scroll[0]) || !fis_zero(scroll[1]))
+                cbStack.back()->IR_OnMouseWheel(scroll[0], scroll[1]);
+        }
     }
 }
 
@@ -299,17 +310,20 @@ void CInput::KeyUpdate()
         case SDL_KEYDOWN:
             if (event.key.repeat)
                 continue;
-            cbStack.back()->IR_OnKeyboardPress(event.key.keysym.scancode);
+            if (!cbStack.empty())
+                cbStack.back()->IR_OnKeyboardPress(event.key.keysym.scancode);
             break;
 
         case SDL_KEYUP:
-            cbStack.back()->IR_OnKeyboardRelease(event.key.keysym.scancode);
+            if (!cbStack.empty())
+                cbStack.back()->IR_OnKeyboardRelease(event.key.keysym.scancode);
             break;
 
         case SDL_TEXTINPUT:
             if (cnt != textInputCounter)
                 continue; // if input target changed, skip this frame
-            cbStack.back()->IR_OnTextInput(event.text.text);
+            if (!cbStack.empty())
+                cbStack.back()->IR_OnTextInput(event.text.text);
             break;
 
         case SDL_KEYMAPCHANGED:
@@ -318,9 +332,12 @@ void CInput::KeyUpdate()
         }
     }
 
-    for (u32 i = 0; i < COUNT_KB_BUTTONS; ++i)
-        if (keyboardState[i])
-            cbStack.back()->IR_OnKeyboardHold(i);
+    if (!cbStack.empty())
+    {
+        for (u32 i = 0; i < COUNT_KB_BUTTONS; ++i)
+            if (keyboardState[i])
+                cbStack.back()->IR_OnKeyboardHold(i);
+    }
 }
 
 bool ControllerState::attitude_changed() const

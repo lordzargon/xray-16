@@ -22,10 +22,19 @@ void IGame_ObjectPool::prefetch()
     {
         CLASS_ID CLS = pSettings->r_clsid(item.first.c_str(), "class");
         p_count++;
-        IGameObject* pObject = smart_cast<IGameObject*>(NEW_INSTANCE(CLS));
-        pObject->Load(item.first.c_str());
-        VERIFY2(pObject->cNameSect().c_str(), item.first.c_str());
-        m_PrefetchObjects.push_back(pObject);
+        IFactoryObject* inst = NEW_INSTANCE(CLS);
+        IGameObject* pObject = inst ? inst->dcast_GameObject() : nullptr;
+        if (pObject)
+        {
+            pObject->Load(item.first.c_str());
+            VERIFY2(pObject->cNameSect().c_str(), item.first.c_str());
+            m_PrefetchObjects.push_back(pObject);
+        }
+        else
+        {
+            Msg("! [IGame_ObjectPool::prefetch] Failed to get IGameObject for [%s] (clsid=%u, inst=%p)",
+                item.first.c_str(), CLS, inst);
+        }
     }
 
     // out statistic
@@ -43,10 +52,14 @@ void IGame_ObjectPool::clear()
 IGameObject* IGame_ObjectPool::create(pcstr name)
 {
     CLASS_ID CLS = pSettings->r_clsid(name, "class");
-    IGameObject* O = smart_cast<IGameObject*>(NEW_INSTANCE(CLS));
-    O->cNameSect_set(name);
-    O->Load(name);
-    O->PostLoad(name); //--#SM+#--
+    IFactoryObject* inst = NEW_INSTANCE(CLS);
+    IGameObject* O = inst ? inst->dcast_GameObject() : nullptr;
+    if (O)
+    {
+        O->cNameSect_set(name);
+        O->Load(name);
+        O->PostLoad(name); //--#SM+#--
+    }
     return O;
 }
 

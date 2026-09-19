@@ -26,9 +26,9 @@ v2p_flat _main (v_tree I)
 	float 	inten 	= H * dp;			// intensity
 	float2 	result	= calc_xz_wave	(wind.xz*inten, frac);
 #ifdef		USE_TREEWAVE
-			result	= float2(0);
+			result	= float2(0.0);
 #endif
-	float4 	f_pos 	= float4(pos.x+result.x, pos.y, pos.z+result.y, 1);
+	float4 	f_pos 	= float4(pos.x+result.x, pos.y, pos.z+result.y, 1.0);
 
 	// Final xform(s)
 	// Final xform

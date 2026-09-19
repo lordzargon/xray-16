@@ -43,10 +43,26 @@ struct tracy_raii
     }
 };
 
+static bool HasCommandParam(pcstr commandLine, pcstr param)
+{
+    if (!commandLine || !param)
+        return false;
+    const size_t paramLen = xr_strlen(param);
+    pcstr p = strstr(commandLine, param);
+    while (p)
+    {
+        const char next = p[paramLen];
+        if (next == ' ' || next == '\0' || next == '\t' || next == '\r' || next == '\n')
+            return true;
+        p = strstr(p + paramLen, param);
+    }
+    return false;
+}
+
 int entry_point(pcstr commandLine)
 {
     tracy_raii raii;
-    auto* game = strstr(commandLine, "-nogame") ? nullptr : &xrGame;
+    auto* game = HasCommandParam(commandLine, "-nogame") ? nullptr : &xrGame;
 
     CApplication app{ commandLine, game, s_render_modules };
 
@@ -114,6 +130,15 @@ extern "C" XR_EXPORT int SDL_main(int argc, char *argv[])
                     cmd += "-fsltx ";
                     cmd += path;
                     cmd += " ";
+
+                    std::string dir = path;
+                    const size_t slash = dir.find_last_of('/');
+                    if (slash != std::string::npos)
+                    {
+                        const std::string dirPath = dir.substr(0, slash);
+                        chdir(dirPath.c_str());
+                        ALOGI("Changed working directory to: %s", dirPath.c_str());
+                    }
                     break;
                 }
             }

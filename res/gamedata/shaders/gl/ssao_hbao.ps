@@ -95,7 +95,7 @@ float3 fetch_eye_pos(float2 uv)
 		//float3	tap_pos	= s_position.Sample(smp_nofilter,tap);
 		float3	tap_pos	= gbd.P;
 #else // SSAO_OPT_DATA
-    float z = textureLod( s_half_depth, uv, 0 ).z;
+    float z = textureLod( s_half_depth, uv, 0.0 ).z;
     return uv_to_eye(uv, z);
 #endif // SSAO_OPT_DATA
 }
@@ -198,7 +198,7 @@ float horizon_occlusion_integrateDirection(float2 deltaUV,
     float tanT = tan(-M_PI*0.5 + g_AngleBias + 1.e-5);
     float sinT = tan_to_sin(tanT);
 
-    float ao1 = 0;
+    float ao1 = 0.0;
     integrate_direction(ao1, P, uv, deltaUV, numSteps, tanT, sinT);
 
     // Integrate opposite directions together
@@ -234,7 +234,7 @@ float horizon_occlusion2(float2 deltaUV,
     float tanH2 = tangent(T);
     float sinH2 = tanH2 / sqrt(1.0 + tanH2*tanH2);
 
-    float ao2 = 0;
+    float ao2 = 0.0;
     for(float j = 1; j <= numSteps; ++j) {
         uv += deltaUV;
         float3 S = fetch_eye_pos(uv);
@@ -343,10 +343,10 @@ float4 calc_hbao(float z, float3 N, float2 tc0, float4 pos2d)
 #ifndef HBAO_WORLD_JITTER
     float3 rand_Dir = texelFetch(jitter4, int2(int(pos2d.x) & 63, int(pos2d.y) & 63), 0).xyz;
 #else
-    float3 tc1	= mul( m_v2w, float4(P,1) );
+    float3 tc1	= mul( m_v2w, float4(P,1.0) );
     tc1 *= ssao_noise_tile_factor;
     tc1.xz += tc1.y; 
-    float3 rand_Dir = textureLod(jitter4, tc1.xz, 0).xyz; 
+    float3 rand_Dir = textureLod(jitter4, tc1.xz, 0.0).xyz; 
 #endif
 
 

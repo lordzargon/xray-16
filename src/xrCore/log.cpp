@@ -6,6 +6,10 @@
 #include "log.h"
 #include "xrCore/Threading/Lock.hpp"
 
+#if defined(__ANDROID__)
+#include <android/log.h>
+#endif
+
 bool LogExecCB = true;
 string_path log_file_name{};
 bool no_log = true;
@@ -33,6 +37,10 @@ void FlushLog()
 void AddOne(pcstr split)
 {
     ScopeLock scope{ &logCS };
+
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_INFO, "OpenXRay", "%s", split);
+#endif
 
     OutputDebugString(split);
     OutputDebugString("\n");
@@ -250,6 +258,9 @@ void CreateLog(bool nl)
 
         ScopeLock scope{ &logCS };
         LogWriter = w;
+#if defined(__ANDROID__)
+        chmod(log_file_name, 0666);
+#endif
     }
 
     if (strstr(Core.Params, "-force_flushlog"))

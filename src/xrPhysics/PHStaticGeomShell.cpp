@@ -45,7 +45,8 @@ void P_BuildStaticGeomShell(CPHStaticGeomShell* pUnbrokenObject, IPhysicsShellHo
     ObjectContactCallbackFun* object_contact_callback, const Fobb& b)
 {
     pUnbrokenObject->add_Box(b);
-    pUnbrokenObject->Activate(obj->ObjectXFORM());
+    if (obj)
+        pUnbrokenObject->Activate(obj->ObjectXFORM());
 
     pUnbrokenObject->set_PhysicsRefObject(obj);
     // m_pUnbrokenObject->SetPhObjectInGeomData(m_pUnbrokenObject);
@@ -109,8 +110,10 @@ public:
 IPHStaticGeomShell* P_BuildLeaderGeomShell(IClimableObject* obj, ObjectContactCallbackFun* callback, const Fobb& b)
 {
     CPHLeaderGeomShell* pStaticShell = xr_new<CPHLeaderGeomShell>(obj);
-    P_BuildStaticGeomShell(smart_cast<CPHStaticGeomShell*>(pStaticShell), smart_cast<IPhysicsShellHolder*>(obj), 0, b);
-    pStaticShell->SetMaterial(obj->Material());
+    IPhysicsShellHolder* sh = obj ? obj->cast_IPhysicsShellHolder() : nullptr;
+    P_BuildStaticGeomShell(pStaticShell, sh, 0, b);
+    if (obj)
+        pStaticShell->SetMaterial(obj->Material());
     pStaticShell->set_ObjectContactCallback(callback);
     return pStaticShell;
 }

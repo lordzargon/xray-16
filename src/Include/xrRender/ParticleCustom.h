@@ -2,7 +2,7 @@
 #define ParticleCustom_included
 #pragma once
 
-class IParticleCustom
+class XR_EXPORT IParticleCustom
 {
 public:
     virtual ~IParticleCustom() { ; }

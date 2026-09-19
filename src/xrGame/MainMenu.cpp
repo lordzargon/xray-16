@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "MainMenu.h"
 #include "ui/UIDialogWnd.h"
+#include "ui/UIScriptWnd.h"
 #include "ui/UIMessageBoxEx.h"
 #include "xrEngine/XR_IOConsole.h"
 #include "xrEngine/IGame_Level.h"
@@ -295,15 +296,33 @@ bool CMainMenu::ReloadUI()
         CleanInternals();
     }
     IFactoryObject* dlg = NEW_INSTANCE(xray::make_clsid("MAIN_MNU"));
+    Msg("[ReloadUI] NEW_INSTANCE(MAIN_MNU) returned dlg=%p", dlg);
     if (!dlg)
     {
+        Msg("! [ReloadUI] Failed to create MAIN_MNU instance!");
         m_Flags.set(flActive | flNeedChangeCapture, FALSE);
         return false;
     }
     xr_delete(m_startDialog);
 
+    Msg("[ReloadUI] dlg typeid=%s", typeid(*dlg).name());
     m_startDialog = smart_cast<CUIDialogWnd*>(dlg);
-    VERIFY(m_startDialog);
+    Msg("[ReloadUI] smart_cast to CUIDialogWnd returned %p", m_startDialog);
+    if (!m_startDialog)
+    {
+        CUIDialogWndEx* ex = dynamic_cast<CUIDialogWndEx*>(dlg);
+        Msg("[ReloadUI] dynamic_cast to CUIDialogWndEx returned %p", ex);
+        if (ex)
+            m_startDialog = static_cast<CUIDialogWnd*>(ex);
+    }
+
+    if (!m_startDialog)
+    {
+        Msg("! [ReloadUI] Failed to cast MAIN_MNU dlg to CUIDialogWnd!");
+        m_Flags.set(flActive | flNeedChangeCapture, FALSE);
+        return false;
+    }
+
     m_startDialog->m_bWorkInPause = true;
     m_startDialog->ShowDialog(true);
     return true;

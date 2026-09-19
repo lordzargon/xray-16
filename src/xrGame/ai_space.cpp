@@ -89,18 +89,31 @@ void CAI_Space::RegisterScriptClasses()
     shared_str registrators = READ_IF_EXISTS(l_tpIniFile, r_string, "common", "class_registrators", "");
     xr_delete(l_tpIniFile);
     u32 registratorCount = _GetItemCount(registrators.c_str());
+    Msg("* [RegisterScriptClasses] registrators='%s' (count=%u)", registrators.c_str(), registratorCount);
     string256 I;
+    lua_State* L = GEnv.ScriptEngine->lua();
+    lua_getglobal(L, "editor");
+    int t = lua_type(L, -1);
+    Msg("* [RegisterScriptClasses] 'editor' global in Lua: type=%d (%s)", t, lua_typename(L, t));
+    lua_pop(L, 1);
+
     for (u32 i = 0; i < registratorCount; i++)
     {
         _GetItem(registrators.c_str(), i, I);
+        Msg("* [RegisterScriptClasses] loading and executing registrator '%s'...", I);
         luabind::functor<void> result;
         if (!GEnv.ScriptEngine->functor(I, result))
         {
+            Msg("! [RegisterScriptClasses] Cannot load class registrator '%s'!", I);
             GEnv.ScriptEngine->script_log(LuaMessageType::Error, "Cannot load class registrator %s!", I);
             continue;
         }
         result(const_cast<CObjectFactory*>(&object_factory()));
+        Msg("* [RegisterScriptClasses] completed registrator '%s'", I);
     }
+
+    Msg("* [RegisterScriptClasses] Ensuring MAIN_MNU is registered...");
+    const_cast<CObjectFactory*>(&object_factory())->register_script_class("ui_main_menu.main_menu", "MAIN_MNU", "main_menu");
 #endif
 }
 

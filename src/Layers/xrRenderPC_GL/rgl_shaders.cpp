@@ -148,6 +148,14 @@ private:
         CopyMemory(data, sourceData, dataLength);
         data[dataLength] = '\n';
         data[dataLength + 1] = '\0';
+
+#if defined(__ANDROID__)
+        while (char* fc = strstr(data, "in vec4 gl_FragCoord;"))
+        {
+            memset(fc, ' ', strlen("in vec4 gl_FragCoord;"));
+        }
+#endif
+
         m_includes.push_back(data);
         m_source.push_back(data);
 
@@ -224,8 +232,22 @@ HRESULT CRender::shader_compile(pcstr name, IReader* fs, pcstr pFunctionName,
         sh_name.append(option);
     };
 
+#if defined(__ANDROID__)
+    options.add("#version 320 es");
+    options.add("precision highp float;");
+    options.add("precision highp int;");
+    options.add("precision highp sampler2D;");
+    options.add("precision highp sampler3D;");
+    options.add("precision highp samplerCube;");
+    options.add("precision highp sampler2DShadow;");
+    options.add("precision highp sampler2DMS;");
+    options.add("precision highp sampler2DArray;");
+    options.add("precision highp sampler2DArrayShadow;");
+    options.add("precision highp samplerCubeShadow;");
+#else
     options.add("#version 410");
     options.add("#extension GL_ARB_separate_shader_objects : enable");
+#endif
 
 #ifdef DEBUG
     options.add("#pragma optimize (off)");
@@ -237,6 +259,10 @@ HRESULT CRender::shader_compile(pcstr name, IReader* fs, pcstr pFunctionName,
 
     xr_sprintf(c_name, "// %s.%s", name, pTarget);
     options.add(c_name);
+
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_INFO, "OpenXRayShader", "Compiling shader '%s', target='%s'", name, pTarget);
+#endif
 
     // Shadow map size
     {

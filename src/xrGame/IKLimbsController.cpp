@@ -28,8 +28,14 @@ void CIKLimbsController::Create(CGameObject* O)
     VERIFY(O);
     m_legs_blend = 0;
 
+    if (!O || !O->Visual())
+        return;
+
     IKinematics* K = smart_cast<IKinematics*>(O->Visual());
     m_object = O;
+    if (!K)
+        return;
+
     VERIFY(K);
     u16 sz = 2;
     if (K->LL_UserData() && K->LL_UserData()->section_exist("ik"))

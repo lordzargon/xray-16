@@ -118,6 +118,7 @@ void CRenderDevice::InitializeImGui()
         viewport->PlatformHandle = vd->Window;
         viewport->PlatformHandleRaw = nullptr;
 
+#if !defined(__ANDROID__)
         SDL_SysWMinfo info;
         SDL_VERSION(&info.version);
         if (SDL_GetWindowWMInfo(vd->Window, &info))
@@ -128,6 +129,7 @@ void CRenderDevice::InitializeImGui()
             viewport->PlatformHandleRaw = (void*)info.info.cocoa.window;
 #endif
         }
+#endif
 
         if (viewport->ParentViewportId)
         {

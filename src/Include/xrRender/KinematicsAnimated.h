@@ -32,7 +32,7 @@ struct SKeyTable
     SKeyTable() { std::fill_n(chanel_blend_conts, MAX_CHANNELS, 0); }
 };
 
-class XR_NOVTABLE IKinematicsAnimated
+class XR_EXPORT XR_NOVTABLE IKinematicsAnimated
 {
 public:
     virtual ~IKinematicsAnimated() = 0;

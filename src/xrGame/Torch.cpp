@@ -201,12 +201,16 @@ void CTorch::Switch(bool light_on)
 
     if (light_trace_bone.c_str())
     {
-        IKinematics* pVisual = smart_cast<IKinematics*>(Visual());
-        VERIFY(pVisual);
-        u16 bi = pVisual->LL_BoneID(light_trace_bone);
-
-        pVisual->LL_SetBoneVisible(bi, light_on, TRUE);
-        pVisual->CalculateBones(TRUE);
+        IKinematics* pVisual = PKinematics(Visual());
+        if (pVisual)
+        {
+            u16 bi = pVisual->LL_BoneID(light_trace_bone);
+            if (bi != BI_NONE)
+            {
+                pVisual->LL_SetBoneVisible(bi, light_on, TRUE);
+                pVisual->CalculateBones(TRUE);
+            }
+        }
     }
 }
 bool CTorch::torch_active() const { return (m_switched_on); }
@@ -218,69 +222,87 @@ bool CTorch::net_Spawn(CSE_Abstract* DC)
     cNameVisual_set(torch->get_visual());
 
     R_ASSERT(!GetCForm());
-    R_ASSERT(smart_cast<IKinematics*>(Visual()));
-    CForm = xr_new<CCF_Skeleton>(this);
+    IKinematics* K = PKinematics(Visual());
+    if (K)
+        CForm = xr_new<CCF_Skeleton>(this);
+    else
+        CForm = xr_new<CCF_EventBox>(this);
 
     if (!inherited::net_Spawn(DC))
         return (FALSE);
 
     bool b_r2 = GEnv.Render->GenerationIsR2OrHigher();
 
-    IKinematics* K = smart_cast<IKinematics*>(Visual());
-    CInifile* pUserData = K->LL_UserData();
-    R_ASSERT3(pUserData, "Empty Torch user data!", torch->get_visual());
-    lanim = LALib.FindItem(pUserData->r_string(TORCH_DEFINITION, "color_animator"));
-    guid_bone = K->LL_BoneID(pUserData->r_string(TORCH_DEFINITION, "guide_bone"));
-    VERIFY(guid_bone != BI_NONE);
+    K = PKinematics(Visual());
+    CInifile* pUserData = K ? K->LL_UserData() : nullptr;
+    const CInifile* ini = (pUserData && pUserData->section_exist(TORCH_DEFINITION)) ? pUserData :
+                          (pSettings->section_exist(TORCH_DEFINITION) ? pSettings :
+                          (pSettings->section_exist(cNameSect()) ? pSettings : nullptr));
+    LPCSTR sect = (ini == pUserData || (ini && ini->section_exist(TORCH_DEFINITION))) ? TORCH_DEFINITION : cNameSect().c_str();
 
-    Fcolor clr = pUserData->r_fcolor(TORCH_DEFINITION, (b_r2) ? "color_r2" : "color");
-    fBrightness = clr.intensity();
-    float range = pUserData->r_float(TORCH_DEFINITION, (b_r2) ? "range_r2" : "range");
-    light_render->set_color(clr);
-    light_render->set_range(range);
-
-    if (b_r2)
+    float range = 15.f;
+    if (ini && ini->section_exist(sect))
     {
-        bool useVolumetric = pUserData->read_if_exists<bool>(TORCH_DEFINITION, "volumetric_enabled", false);
-        light_render->set_volumetric(useVolumetric);
-        if (useVolumetric)
+        if (ini->line_exist(sect, "color_animator"))
+            lanim = LALib.FindItem(ini->r_string(sect, "color_animator"));
+        if (K && ini->line_exist(sect, "guide_bone"))
+            guid_bone = K->LL_BoneID(ini->r_string(sect, "guide_bone"));
+
+        Fcolor clr = ini->line_exist(sect, (b_r2) ? "color_r2" : "color") ?
+            ini->r_fcolor(sect, (b_r2) ? "color_r2" : "color") : Fcolor{1.f, 1.f, 1.f, 1.f};
+        fBrightness = clr.intensity();
+        range = ini->line_exist(sect, (b_r2) ? "range_r2" : "range") ?
+            ini->r_float(sect, (b_r2) ? "range_r2" : "range") : 15.f;
+        light_render->set_color(clr);
+        light_render->set_range(range);
+
+        if (b_r2)
         {
-            float volQuality = pUserData->read_if_exists<float>(TORCH_DEFINITION, "volumetric_quality", 1.f);
-            clamp(volQuality, 0.f, 1.f);
-            light_render->set_volumetric_quality(volQuality);
+            bool useVolumetric = ini->read_if_exists<bool>(sect, "volumetric_enabled", false);
+            light_render->set_volumetric(useVolumetric);
+            if (useVolumetric)
+            {
+                float volQuality = ini->read_if_exists<float>(sect, "volumetric_quality", 1.f);
+                clamp(volQuality, 0.f, 1.f);
+                light_render->set_volumetric_quality(volQuality);
 
-            float volIntensity = pUserData->read_if_exists<float>(TORCH_DEFINITION, "volumetric_intensity", 1.f);
-            clamp(volIntensity, 0.f, 10.f);
-            light_render->set_volumetric_intensity(volIntensity);
+                float volIntensity = ini->read_if_exists<float>(sect, "volumetric_intensity", 1.f);
+                clamp(volIntensity, 0.f, 10.f);
+                light_render->set_volumetric_intensity(volIntensity);
 
-            float volDistance = pUserData->read_if_exists<float>(TORCH_DEFINITION, "volumetric_distance", 1.f);
-            clamp(volDistance, 0.f, 1.f);
-            light_render->set_volumetric_distance(volDistance);
+                float volDistance = ini->read_if_exists<float>(sect, "volumetric_distance", 1.f);
+                clamp(volDistance, 0.f, 1.f);
+                light_render->set_volumetric_distance(volDistance);
+            }
         }
+
+        Fcolor clr_o = ini->line_exist(sect, (b_r2) ? "omni_color_r2" : "omni_color") ?
+            ini->r_fcolor(sect, (b_r2) ? "omni_color_r2" : "omni_color") : clr;
+        float range_o = ini->line_exist(sect, (b_r2) ? "omni_range_r2" : "omni_range") ?
+            ini->r_float(sect, (b_r2) ? "omni_range_r2" : "omni_range") : 1.5f;
+        light_omni->set_color(clr_o);
+        light_omni->set_range(range_o);
+
+        if (ini->line_exist(sect, "spot_angle"))
+            light_render->set_cone(deg2rad(ini->r_float(sect, "spot_angle")));
+        if (ini->line_exist(sect, "spot_texture"))
+            light_render->set_texture(ini->r_string(sect, "spot_texture"));
+
+        if (ini->line_exist(sect, "glow_texture"))
+            glow_render->set_texture(ini->r_string(sect, "glow_texture"));
+        glow_render->set_color(clr);
+        if (ini->line_exist(sect, "glow_radius"))
+            glow_render->set_radius(ini->r_float(sect, "glow_radius"));
+
+        m_delta_h = PI_DIV_2 - atan((range * 0.5f) / _abs(TORCH_OFFSET.x));
     }
 
-    Fcolor clr_o = pUserData->r_fcolor(TORCH_DEFINITION, (b_r2) ? "omni_color_r2" : "omni_color");
-    float range_o = pUserData->r_float(TORCH_DEFINITION, (b_r2) ? "omni_range_r2" : "omni_range");
-    light_omni->set_color(clr_o);
-    light_omni->set_range(range_o);
-
-    light_render->set_cone(deg2rad(pUserData->r_float(TORCH_DEFINITION, "spot_angle")));
-    light_render->set_texture(pUserData->r_string(TORCH_DEFINITION, "spot_texture"));
-
-    glow_render->set_texture(pUserData->r_string(TORCH_DEFINITION, "glow_texture"));
-    glow_render->set_color(clr);
-    glow_render->set_radius(pUserData->r_float(TORCH_DEFINITION, "glow_radius"));
-
-    //включить/выключить фонарик
+    // включить/выключить фонарик
     Switch(torch->m_active);
     VERIFY(!torch->m_active || (torch->ID_Parent != 0xffff));
 
     if (torch->ID_Parent == 0)
         SwitchNightVision(torch->m_nightvision_active, false);
-    // else
-    //	SwitchNightVision	(false, false);
-
-    m_delta_h = PI_DIV_2 - atan((range * 0.5f) / _abs(TORCH_OFFSET.x));
 
     return (TRUE);
 }
@@ -316,21 +338,27 @@ void CTorch::UpdateCL()
     if (!m_switched_on)
         return;
 
-    CBoneInstance& BI = smart_cast<IKinematics*>(Visual())->LL_GetBoneInstance(guid_bone);
+    IKinematics* K = PKinematics(Visual());
+    CBoneInstance* pBI = (K && guid_bone != BI_NONE) ? &K->LL_GetBoneInstance(guid_bone) : nullptr;
     Fmatrix M;
 
     if (H_Parent())
     {
         CActor* actor = smart_cast<CActor*>(H_Parent());
-        if (actor)
-            smart_cast<IKinematics*>(H_Parent()->Visual())->CalculateBones_Invalidate();
+        IKinematics* parentK = H_Parent()->Visual() ? PKinematics(H_Parent()->Visual()) : nullptr;
+        if (actor && parentK)
+            parentK->CalculateBones_Invalidate();
 
         if (H_Parent()->XFORM().c.distance_to_sqr(Device.vCameraPosition) < _sqr(OPTIMIZATION_DISTANCE) ||
             GameID() != eGameIDSingle)
         {
             // near camera
-            smart_cast<IKinematics*>(H_Parent()->Visual())->CalculateBones();
-            M.mul_43(XFORM(), BI.mTransform);
+            if (parentK)
+                parentK->CalculateBones();
+            if (pBI)
+                M.mul_43(XFORM(), pBI->mTransform);
+            else
+                M = XFORM();
         }
         else
         {
@@ -405,7 +433,10 @@ void CTorch::UpdateCL()
     {
         if (getVisible() && m_pPhysicsShell)
         {
-            M.mul(XFORM(), BI.mTransform);
+            if (pBI)
+                M.mul(XFORM(), pBI->mTransform);
+            else
+                M = XFORM();
 
             m_switched_on = false;
             light_render->set_active(false);

@@ -18,7 +18,201 @@
 #endif // DEBUG
 
 #ifdef PURE_DYNAMIC_CAST
-#define smart_cast dynamic_cast
+#ifndef SMART_CAST_HELPER_DEFINED
+#define SMART_CAST_HELPER_DEFINED
+#include <type_traits>
+#include "Include/xrRender/RenderVisual.h"
+#include "Include/xrRender/Kinematics.h"
+#include "Include/xrRender/KinematicsAnimated.h"
+#include "Include/xrRender/ParticleCustom.h"
+
+template <typename Target, typename Source, typename Enable = void>
+struct smart_cast_helper
+{
+    static inline Target cast(Source* source)
+    {
+        return dynamic_cast<Target>(source);
+    }
+    static inline Target cast(Source& source)
+    {
+        return dynamic_cast<Target>(source);
+    }
+};
+
+// Specialization for Target = IKinematics* from any IRenderVisual-derived pointer
+template <typename Target, typename Source>
+struct smart_cast_helper<Target, Source, 
+    std::enable_if_t<
+        (std::is_same_v<Target, IKinematics*> || std::is_same_v<Target, const IKinematics*>) &&
+        std::is_base_of_v<IRenderVisual, Source>
+    >>
+{
+    static inline Target cast(Source* source)
+    {
+        return source ? static_cast<Target>(const_cast<IRenderVisual*>(static_cast<const IRenderVisual*>(source))->dcast_PKinematics()) : nullptr;
+    }
+    static inline Target cast(Source& source)
+    {
+        return static_cast<Target>(const_cast<IRenderVisual*>(static_cast<const IRenderVisual*>(&source))->dcast_PKinematics());
+    }
+};
+
+// Specialization for Target = IKinematics& from any IRenderVisual-derived object
+template <typename Target, typename Source>
+struct smart_cast_helper<Target, Source, 
+    std::enable_if_t<
+        (std::is_same_v<Target, IKinematics&> || std::is_same_v<Target, const IKinematics&>) &&
+        std::is_base_of_v<IRenderVisual, Source>
+    >>
+{
+    static inline Target cast(Source& source)
+    {
+        auto* k = const_cast<IRenderVisual*>(static_cast<const IRenderVisual*>(&source))->dcast_PKinematics();
+        return *static_cast<std::remove_reference_t<Target>*>(k);
+    }
+};
+
+// Specialization for Target = IKinematicsAnimated* from any IRenderVisual-derived pointer
+template <typename Target, typename Source>
+struct smart_cast_helper<Target, Source,
+    std::enable_if_t<
+        (std::is_same_v<Target, IKinematicsAnimated*> || std::is_same_v<Target, const IKinematicsAnimated*>) &&
+        std::is_base_of_v<IRenderVisual, Source>
+    >>
+{
+    static inline Target cast(Source* source)
+    {
+        return source ? static_cast<Target>(const_cast<IRenderVisual*>(static_cast<const IRenderVisual*>(source))->dcast_PKinematicsAnimated()) : nullptr;
+    }
+    static inline Target cast(Source& source)
+    {
+        return static_cast<Target>(const_cast<IRenderVisual*>(static_cast<const IRenderVisual*>(&source))->dcast_PKinematicsAnimated());
+    }
+};
+
+// Specialization for Target = IKinematicsAnimated& from any IRenderVisual-derived object
+template <typename Target, typename Source>
+struct smart_cast_helper<Target, Source,
+    std::enable_if_t<
+        (std::is_same_v<Target, IKinematicsAnimated&> || std::is_same_v<Target, const IKinematicsAnimated&>) &&
+        std::is_base_of_v<IRenderVisual, Source>
+    >>
+{
+    static inline Target cast(Source& source)
+    {
+        auto* k = const_cast<IRenderVisual*>(static_cast<const IRenderVisual*>(&source))->dcast_PKinematicsAnimated();
+        return *static_cast<std::remove_reference_t<Target>*>(k);
+    }
+};
+
+// Specialization for Target = IParticleCustom* from any IRenderVisual-derived pointer
+template <typename Target, typename Source>
+struct smart_cast_helper<Target, Source,
+    std::enable_if_t<
+        (std::is_same_v<Target, IParticleCustom*> || std::is_same_v<Target, const IParticleCustom*>) &&
+        std::is_base_of_v<IRenderVisual, Source>
+    >>
+{
+    static inline Target cast(Source* source)
+    {
+        return source ? static_cast<Target>(const_cast<IRenderVisual*>(static_cast<const IRenderVisual*>(source))->dcast_ParticleCustom()) : nullptr;
+    }
+    static inline Target cast(Source& source)
+    {
+        return static_cast<Target>(const_cast<IRenderVisual*>(static_cast<const IRenderVisual*>(&source))->dcast_ParticleCustom());
+    }
+};
+
+// Specialization for Target = IKinematicsAnimated* from IKinematics
+template <typename Target, typename Source>
+struct smart_cast_helper<Target, Source,
+    std::enable_if_t<
+        (std::is_same_v<Target, IKinematicsAnimated*> || std::is_same_v<Target, const IKinematicsAnimated*>) &&
+        std::is_base_of_v<IKinematics, Source> && !std::is_base_of_v<IRenderVisual, Source>
+    >>
+{
+    static inline Target cast(Source* source)
+    {
+        return source ? static_cast<Target>(const_cast<IKinematics*>(static_cast<const IKinematics*>(source))->dcast_PKinematicsAnimated()) : nullptr;
+    }
+    static inline Target cast(Source& source)
+    {
+        return static_cast<Target>(const_cast<IKinematics*>(static_cast<const IKinematics*>(&source))->dcast_PKinematicsAnimated());
+    }
+};
+
+// Specialization for Target = IKinematics* from IKinematicsAnimated
+template <typename Target, typename Source>
+struct smart_cast_helper<Target, Source,
+    std::enable_if_t<
+        (std::is_same_v<Target, IKinematics*> || std::is_same_v<Target, const IKinematics*>) &&
+        std::is_base_of_v<IKinematicsAnimated, Source> && !std::is_base_of_v<IRenderVisual, Source>
+    >>
+{
+    static inline Target cast(Source* source)
+    {
+        return source ? static_cast<Target>(const_cast<IKinematicsAnimated*>(static_cast<const IKinematicsAnimated*>(source))->dcast_PKinematics()) : nullptr;
+    }
+    static inline Target cast(Source& source)
+    {
+        return static_cast<Target>(const_cast<IKinematicsAnimated*>(static_cast<const IKinematicsAnimated*>(&source))->dcast_PKinematics());
+    }
+};
+
+// Specialization for Target = IRenderVisual* from IKinematics
+template <typename Target, typename Source>
+struct smart_cast_helper<Target, Source,
+    std::enable_if_t<
+        (std::is_same_v<Target, IRenderVisual*> || std::is_same_v<Target, const IRenderVisual*>) &&
+        std::is_base_of_v<IKinematics, Source>
+    >>
+{
+    static inline Target cast(Source* source)
+    {
+        return source ? static_cast<Target>(const_cast<IKinematics*>(static_cast<const IKinematics*>(source))->dcast_RenderVisual()) : nullptr;
+    }
+    static inline Target cast(Source& source)
+    {
+        return static_cast<Target>(const_cast<IKinematics*>(static_cast<const IKinematics*>(&source))->dcast_RenderVisual());
+    }
+};
+
+// Specialization for Target = IRenderVisual* from IKinematicsAnimated
+template <typename Target, typename Source>
+struct smart_cast_helper<Target, Source,
+    std::enable_if_t<
+        (std::is_same_v<Target, IRenderVisual*> || std::is_same_v<Target, const IRenderVisual*>) &&
+        std::is_base_of_v<IKinematicsAnimated, Source> && !std::is_base_of_v<IKinematics, Source>
+    >>
+{
+    static inline Target cast(Source* source)
+    {
+        return source ? static_cast<Target>(const_cast<IKinematicsAnimated*>(static_cast<const IKinematicsAnimated*>(source))->dcast_RenderVisual()) : nullptr;
+    }
+    static inline Target cast(Source& source)
+    {
+        return static_cast<Target>(const_cast<IKinematicsAnimated*>(static_cast<const IKinematicsAnimated*>(&source))->dcast_RenderVisual());
+    }
+};
+
+template <typename Target, typename Source>
+inline Target smart_cast(Source* source)
+{
+    return smart_cast_helper<Target, Source>::cast(source);
+}
+
+template <typename Target, typename Source>
+inline Target smart_cast(Source& source)
+{
+    return smart_cast_helper<Target, Source>::cast(source);
+}
+
+template <typename Target>
+inline Target smart_cast(std::nullptr_t)
+{
+    return nullptr;
+}
+#endif // SMART_CAST_HELPER_DEFINED
 #else
 #define TL_FAST_COMPILATION
 #include <loki/Typelist.h>

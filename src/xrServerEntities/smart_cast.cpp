@@ -24,5 +24,7 @@
 #include "xrServer_Objects_ALife_Monsters.h"
 #endif
 
+#ifndef PURE_DYNAMIC_CAST
 #undef SMART_CAST_H
 #include "smart_cast.h"
+#endif

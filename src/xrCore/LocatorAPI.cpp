@@ -981,17 +981,24 @@ void CLocatorAPI::_initialize(u32 flags, pcstr target_folder, pcstr fs_name)
             ZoneScopedN("Read string");
 
             pFSltx->r_string(buf, sizeof buf);
-            if (buf[0] == ';')
+            _Trim(buf);
+            if (buf[0] == ';' || buf[0] == 0 || !strchr(buf, '='))
                 continue;
 
             _GetItem(buf, 0, id, '=');
+            _Trim(id);
 
             if (!m_Flags.is(flBuildCopy) && 0 == xr_strcmp(id, "$build_copy$"))
                 continue;
 
             _GetItem(buf, 1, temp, '=');
+            _Trim(temp);
             int cnt = _GetItemCount(temp, _delimiter);
-            R_ASSERT2(cnt >= 3, temp);
+            if (cnt < 3)
+            {
+                Msg("! Invalid fsgame.ltx entry: '%s' (parsed '%s', items: %d)", buf, temp, cnt);
+                continue;
+            }
             u32 fl = 0;
             _GetItem(temp, 0, b_v, _delimiter);
 

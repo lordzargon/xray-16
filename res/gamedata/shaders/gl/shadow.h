@@ -158,25 +158,25 @@ float shadow_extreme_quality( float3 tc )
             float4 d4;
             float  b;
 
-			d4.w = textureLodOffset (s_dmap, tc.xy, 0, int2( col, row ) ).x;
+			d4.w = textureLodOffset (s_dmap, tc.xy, 0.0, int2( col, row ) ).x;
 			b = ( tc.z <= d4.w ) ? (0.0) : (1.0); 
 			vmask[ col + FS2 + 0 ] += ( ( tc.z <= d4.w ) ? ( uint(1) << uint( row + FS2 + 0 ) ) : uint(0) );
 			blockerCount     += b;
             avgBlockerDepth  += d4.w * b;
 			
-			d4.z = textureLodOffset (s_dmap, tc.xy, 0, int2( col+1, row ) ).x;
+			d4.z = textureLodOffset (s_dmap, tc.xy, 0.0, int2( col+1, row ) ).x;
 			b = ( tc.z <= d4.z ) ? (0.0) : (1.0); 
 			vmask[ col + FS2 + 1 ] += ( ( tc.z <= d4.z ) ? ( uint(1) << uint( row + FS2 + 0 ) ) : uint(0) );
 			blockerCount     += b;
             avgBlockerDepth  += d4.z * b;
 			
-			d4.x = textureLodOffset (s_dmap, tc.xy, 0, int2( col, row+1 ) ).x;
+			d4.x = textureLodOffset (s_dmap, tc.xy, 0.0, int2( col, row+1 ) ).x;
 			vmask[ col + FS2 + 0 ] += ( ( tc.z <= d4.x ) ? ( uint(1) << uint( row + FS2 + 1 ) ) : uint(0) );
 			b = ( tc.z <= d4.x ) ? (0.0) : (1.0); 
 			blockerCount     += b;
             avgBlockerDepth  += d4.x * b;
 
-			d4.y = textureLodOffset (s_dmap, tc.xy, 0, int2( col+1, row+1 ) ).x;
+			d4.y = textureLodOffset (s_dmap, tc.xy, 0.0, int2( col+1, row+1 ) ).x;
 			vmask[ col + FS2 + 1 ] += ( ( tc.z <= d4.y ) ? ( uint(1) << uint( row + FS2 + 1 ) ) : uint(0) );
 			b = ( tc.z <= d4.y ) ? (0.0) : (1.0); 
 			blockerCount     += b;
@@ -219,33 +219,33 @@ float shadow_extreme_quality( float3 tc )
 #endif
 		  if( col == -FS2 )
 		  {
-			 s += ( 1 - fc.y ) * ( v1[0].w * ( Fw3(row+FS2,0,fRatio) - Fw3(row+FS2,0,fRatio) * fc.x ) + v1[0].z * ( fc.x * ( Fw3(row+FS2,0,fRatio) - Fw3(row+FS2,1,fRatio) ) +  Fw3(row+FS2,1,fRatio) ) );
+			 s += ( 1.0 - fc.y ) * ( v1[0].w * ( Fw3(row+FS2,0,fRatio) - Fw3(row+FS2,0,fRatio) * fc.x ) + v1[0].z * ( fc.x * ( Fw3(row+FS2,0,fRatio) - Fw3(row+FS2,1,fRatio) ) +  Fw3(row+FS2,1,fRatio) ) );
 			 s += (     fc.y ) * ( v1[0].x * ( Fw3(row+FS2,0,fRatio) - Fw3(row+FS2,0,fRatio) * fc.x ) + v1[0].y * ( fc.x * ( Fw3(row+FS2,0,fRatio) - Fw3(row+FS2,1,fRatio) ) +  Fw3(row+FS2,1,fRatio) ) );
 			 if( row > -FS2 )
 			 {
-				s += ( 1 - fc.y ) * ( v0[0].x * ( Fw3(row+FS2-1,0,fRatio) - Fw3(row+FS2-1,0,fRatio) * fc.x ) + v0[0].y * ( fc.x * ( Fw3(row+FS2-1,0,fRatio) - Fw3(row+FS2-1,1,fRatio) ) +  Fw3(row+FS2-1,1,fRatio) ) );
+				s += ( 1.0 - fc.y ) * ( v0[0].x * ( Fw3(row+FS2-1,0,fRatio) - Fw3(row+FS2-1,0,fRatio) * fc.x ) + v0[0].y * ( fc.x * ( Fw3(row+FS2-1,0,fRatio) - Fw3(row+FS2-1,1,fRatio) ) +  Fw3(row+FS2-1,1,fRatio) ) );
 				s += (     fc.y ) * ( v1[0].w * ( Fw3(row+FS2-1,0,fRatio) - Fw3(row+FS2-1,0,fRatio) * fc.x ) + v1[0].z * ( fc.x * ( Fw3(row+FS2-1,0,fRatio) - Fw3(row+FS2-1,1,fRatio) ) +  Fw3(row+FS2-1,1,fRatio) ) );
 			 }
 		  }
 		  else if( col == FS2 )
 		  {
-			 s += ( 1 - fc.y ) * ( v1[FS2].w * ( fc.x * ( Fw3(row+FS2,FS-2,fRatio) - Fw3(row+FS2,FS-1,fRatio) ) + Fw3(row+FS2,FS-1,fRatio) ) + v1[FS2].z * fc.x * Fw3(row+FS2,FS-1,fRatio) );
+			 s += ( 1.0 - fc.y ) * ( v1[FS2].w * ( fc.x * ( Fw3(row+FS2,FS-2,fRatio) - Fw3(row+FS2,FS-1,fRatio) ) + Fw3(row+FS2,FS-1,fRatio) ) + v1[FS2].z * fc.x * Fw3(row+FS2,FS-1,fRatio) );
 			 s += (     fc.y ) * ( v1[FS2].x * ( fc.x * ( Fw3(row+FS2,FS-2,fRatio) - Fw3(row+FS2,FS-1,fRatio) ) + Fw3(row+FS2,FS-1,fRatio) ) + v1[FS2].y * fc.x * Fw3(row+FS2,FS-1,fRatio) );
 			 if( row > -FS2 )
 			 {
-				s += ( 1 - fc.y ) * ( v0[FS2].x * ( fc.x * ( Fw3(row+FS2-1,FS-2,fRatio) - Fw3(row+FS2-1,FS-1,fRatio) ) + Fw3(row+FS2-1,FS-1,fRatio) ) + v0[FS2].y * fc.x * Fw3(row+FS2-1,FS-1,fRatio) );
+				s += ( 1.0 - fc.y ) * ( v0[FS2].x * ( fc.x * ( Fw3(row+FS2-1,FS-2,fRatio) - Fw3(row+FS2-1,FS-1,fRatio) ) + Fw3(row+FS2-1,FS-1,fRatio) ) + v0[FS2].y * fc.x * Fw3(row+FS2-1,FS-1,fRatio) );
 				s += (     fc.y ) * ( v1[FS2].w * ( fc.x * ( Fw3(row+FS2-1,FS-2,fRatio) - Fw3(row+FS2-1,FS-1,fRatio) ) + Fw3(row+FS2-1,FS-1,fRatio) ) + v1[FS2].z * fc.x * Fw3(row+FS2-1,FS-1,fRatio) );
 			 }
 		  }
 		  else
 		  {
-			 s += ( 1 - fc.y ) * ( v1[(col+FS2)/2].w * ( fc.x * ( Fw3(row+FS2,col+FS2-1,fRatio) - Fw3(row+FS2,col+FS2+0,fRatio) ) + Fw3(row+FS2,col+FS2+0,fRatio) ) +
+			 s += ( 1.0 - fc.y ) * ( v1[(col+FS2)/2].w * ( fc.x * ( Fw3(row+FS2,col+FS2-1,fRatio) - Fw3(row+FS2,col+FS2+0,fRatio) ) + Fw3(row+FS2,col+FS2+0,fRatio) ) +
 						           v1[(col+FS2)/2].z * ( fc.x * ( Fw3(row+FS2,col+FS2-0,fRatio) - Fw3(row+FS2,col+FS2+1,fRatio) ) + Fw3(row+FS2,col+FS2+1,fRatio) ) );
 			 s += (     fc.y ) * ( v1[(col+FS2)/2].x * ( fc.x * ( Fw3(row+FS2,col+FS2-1,fRatio) - Fw3(row+FS2,col+FS2+0,fRatio) ) + Fw3(row+FS2,col+FS2+0,fRatio) ) +
 						           v1[(col+FS2)/2].y * ( fc.x * ( Fw3(row+FS2,col+FS2-0,fRatio) - Fw3(row+FS2,col+FS2+1,fRatio) ) + Fw3(row+FS2,col+FS2+1,fRatio) ) );
 			 if( row > -FS2 )
 			 {
-				s += ( 1 - fc.y ) * ( v0[(col+FS2)/2].x * ( fc.x * ( Fw3(row+FS2-1,col+FS2-1,fRatio) - Fw3(row+FS2-1,col+FS2+0,fRatio) ) + Fw3(row+FS2-1,col+FS2+0,fRatio) ) +
+				s += ( 1.0 - fc.y ) * ( v0[(col+FS2)/2].x * ( fc.x * ( Fw3(row+FS2-1,col+FS2-1,fRatio) - Fw3(row+FS2-1,col+FS2+0,fRatio) ) + Fw3(row+FS2-1,col+FS2+0,fRatio) ) +
 							          v0[(col+FS2)/2].y * ( fc.x * ( Fw3(row+FS2-1,col+FS2-0,fRatio) - Fw3(row+FS2-1,col+FS2+1,fRatio) ) + Fw3(row+FS2-1,col+FS2+1,fRatio) ) );
 				s += (     fc.y ) * ( v1[(col+FS2)/2].w * ( fc.x * ( Fw3(row+FS2-1,col+FS2-1,fRatio) - Fw3(row+FS2-1,col+FS2+0,fRatio) ) + Fw3(row+FS2-1,col+FS2+0,fRatio) ) +
 							          v1[(col+FS2)/2].z * ( fc.x * ( Fw3(row+FS2-1,col+FS2-0,fRatio) - Fw3(row+FS2-1,col+FS2+1,fRatio) ) + Fw3(row+FS2-1,col+FS2+1,fRatio) ) );
@@ -333,10 +333,10 @@ float shadow_extreme_quality_fused( float3 tc )
 #ifndef PS_4            
             d4 = textureGather( s_dmap, tc.xy + (1.0/float(SMAP_size)) * float2( col, row ) );
 #else
-			d4.w = textureLod( s_dmap, tc.xy + (1.0/float(SMAP_size)) * float2( col, row ), 0 ).x;
-			d4.z = textureLod( s_dmap, tc.xy + (1.0/float(SMAP_size)) * float2( col+1, row ) , 0 ).x;
-			d4.y = textureLod( s_dmap, tc.xy + (1.0/float(SMAP_size)) * float2( col+1, row+1 ), 0 ).x;
-			d4.x = textureLod( s_dmap, tc.xy + (1.0/float(SMAP_size)) * float2( col, row+1 ), 0 ).x;
+			d4.w = textureLod( s_dmap, tc.xy + (1.0/float(SMAP_size)) * float2( col, row ), 0.0 ).x;
+			d4.z = textureLod( s_dmap, tc.xy + (1.0/float(SMAP_size)) * float2( col+1, row ) , 0.0 ).x;
+			d4.y = textureLod( s_dmap, tc.xy + (1.0/float(SMAP_size)) * float2( col+1, row+1 ), 0.0 ).x;
+			d4.x = textureLod( s_dmap, tc.xy + (1.0/float(SMAP_size)) * float2( col, row+1 ), 0.0 ).x;
 #endif
             float4 b4  = all( lessThanEqual( tc.zzzz, d4 )) ? float4(0.0) : float4(1.0);   
 
@@ -346,7 +346,7 @@ float shadow_extreme_quality_fused( float3 tc )
           
             if( col == -FS2 )
             {
-                s += ( 1 - fc.y ) * ( v1[0].w * ( Fw2(row+FS2,0) - 
+                s += ( 1.0 - fc.y ) * ( v1[0].w * ( Fw2(row+FS2,0) - 
                                       Fw2(row+FS2,0) * fc.x ) + v1[0].z * 
                                     ( fc.x * ( Fw2(row+FS2,0) - 
                                       Fw2(row+FS2,1) ) +  
@@ -358,7 +358,7 @@ float shadow_extreme_quality_fused( float3 tc )
                                       Fw2(row+FS2,1) ) );
                 if( row > -FS2 )
                 {
-                    s += ( 1 - fc.y ) * ( v0[0].x * ( Fw2(row+FS2-1,0) - 
+                    s += ( 1.0 - fc.y ) * ( v0[0].x * ( Fw2(row+FS2-1,0) - 
                                           Fw2(row+FS2-1,0) * fc.x ) + v0[0].y * 
                                         ( fc.x * ( Fw2(row+FS2-1,0) - 
                                           Fw2(row+FS2-1,1) ) +  
@@ -372,7 +372,7 @@ float shadow_extreme_quality_fused( float3 tc )
             }
             else if( col == FS2 )
             {
-                s += ( 1 - fc.y ) * ( v1[FS2].w * ( fc.x * ( Fw2(row+FS2,FS-2) - 
+                s += ( 1.0 - fc.y ) * ( v1[FS2].w * ( fc.x * ( Fw2(row+FS2,FS-2) - 
                                       Fw2(row+FS2,FS-1) ) + 
                                       Fw2(row+FS2,FS-1) ) + v1[FS2].z * fc.x * 
                                       Fw2(row+FS2,FS-1) );
@@ -382,7 +382,7 @@ float shadow_extreme_quality_fused( float3 tc )
                                       Fw2(row+FS2,FS-1) );
                 if( row > -FS2 )
                 {
-                    s += ( 1 - fc.y ) * ( v0[FS2].x * ( fc.x * 
+                    s += ( 1.0 - fc.y ) * ( v0[FS2].x * ( fc.x * 
                                         ( Fw2(row+FS2-1,FS-2) - 
                                           Fw2(row+FS2-1,FS-1) ) + 
                                           Fw2(row+FS2-1,FS-1) ) + 
@@ -396,7 +396,7 @@ float shadow_extreme_quality_fused( float3 tc )
             }
             else
             {
-                s += ( 1 - fc.y ) * ( v1[(col+FS2)/2].w * ( fc.x * 
+                s += ( 1.0 - fc.y ) * ( v1[(col+FS2)/2].w * ( fc.x * 
                                     ( Fw2(row+FS2,col+FS2-1) - 
                                       Fw2(row+FS2,col+FS2+0) ) + 
                                       Fw2(row+FS2,col+FS2+0) ) +
@@ -414,7 +414,7 @@ float shadow_extreme_quality_fused( float3 tc )
                                       Fw2(row+FS2,col+FS2+1) ) );
                 if( row > -FS2 )
                 {
-                    s += ( 1 - fc.y ) * ( v0[(col+FS2)/2].x * ( fc.x * 
+                    s += ( 1.0 - fc.y ) * ( v0[(col+FS2)/2].x * ( fc.x * 
                                         ( Fw2(row+FS2-1,col+FS2-1) - 
                                           Fw2(row+FS2-1,col+FS2+0) ) + 
                                           Fw2(row+FS2-1,col+FS2+0) ) +
@@ -729,11 +729,11 @@ half 	shadow_high 	(float4 tc)			// jittered sampling
 
 	const float k1 = 1.3/float(SMAP_size);
 	half4	r1;
-	r1.x 	= test 	(tc,-J0.xy+half2(-k1,0)).x;
-	r1.y 	= test 	(tc,-J0.wz+half2( 0,-k1)).y;
+	r1.x 	= test 	(tc,-J0.xy+half2(-k1,0.0)).x;
+	r1.y 	= test 	(tc,-J0.wz+half2( 0.0,-k1)).y;
 
-	r1.z	= test	(tc,-2*J0.xy+half2( k1, 0)).z;
-	r1.w	= test	(tc,-2*J0.wz+half2( 0, k1)).x;
+	r1.z	= test	(tc,-2.0*J0.xy+half2( k1, 0.0)).z;
+	r1.w	= test	(tc,-2.0*J0.wz+half2( 0.0, k1)).x;
 
 	return ( r.x + r.y + r.z + r.w + r1.x + r1.y + r1.z + r1.w )*1.0/8.0;
 }
@@ -776,8 +776,8 @@ float shadow_dx10_1( float4 tc, float2 tcJ, float2 pos2d )
 float shadow_dx10_1_sunshafts( float4 tc, float2 pos2d ) 
 {
    float3 t         = tc.xyz / tc.w;
-   float minmax     = textureLod( s_smap_minmax, t.xy, 0 ).x;
-   bool   umbra     = ( ( minmax < 0 ) && ( t.z > -minmax ) );
+   float minmax     = textureLod( s_smap_minmax, t.xy, 0.0 ).x;
+   bool   umbra     = ( ( minmax < 0.0 ) && ( t.z > -minmax ) );
 
    if( umbra )
    {

@@ -253,7 +253,7 @@ dxRender_Visual* CModelPool::Create(const char* name, IReader* data)
     xr_strlwr(low_name);
     if (strext(low_name))
         *strext(low_name) = 0;
-    //	Msg						("-CREATE %s",low_name);
+    Msg("- [CModelPool::Create] requesting: %s", low_name);
 
     // 0. Search POOL
     POOL_IT it = Pool.find(low_name);
@@ -263,6 +263,7 @@ dxRender_Visual* CModelPool::Create(const char* name, IReader* data)
         dxRender_Visual* Model = it->second;
         Model->Spawn();
         Pool.erase(it);
+        Msg("- [CModelPool::Create] %s found in pool -> %p (Type=%u)", low_name, Model, Model->Type);
         return Model;
     }
     else
@@ -284,9 +285,11 @@ dxRender_Visual* CModelPool::Create(const char* name, IReader* data)
                 return 0;
 #endif
         }
+        Msg("- [CModelPool::Create] %s Base=%p (Type=%u)", low_name, Base, Base ? Base->Type : 0);
         // 3. If found - return (cloned) reference
         dxRender_Visual* Model = Instance_Duplicate(Base);
         Registry.emplace(Model, low_name);
+        Msg("- [CModelPool::Create] %s duplicated Model=%p", low_name, Model);
         return Model;
     }
 }

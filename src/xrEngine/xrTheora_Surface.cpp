@@ -19,7 +19,7 @@ CTheoraSurface::CTheoraSurface()
     // controls
     playing = false;
     looped = false;
-    bShaderYUV2RGB = true;
+    bShaderYUV2RGB = false;
     prefetch = -2;
 }
 
@@ -72,11 +72,13 @@ bool CTheoraSurface::Update(u32 _time)
     }
     if (playing)
     {
-        if (tm_play >= tm_total)
+        if (tm_total > 0 && tm_play >= tm_total)
         {
             if (looped)
             {
-                tm_start = tm_start + tm_total;
+                u32 loops = tm_play / tm_total;
+                tm_start += loops * tm_total;
+                tm_play = _time - tm_start;
                 Reset();
             }
             else
@@ -183,7 +185,7 @@ u32 CTheoraSurface::Height(bool bRealSize)
     ;
 }
 
-void CTheoraSurface::DecompressFrame(u32* data, u32 _width, int& _pos)
+void CTheoraSurface::DecompressFrame(u32* data, u32 _width, int& _pos, bool bRGBA)
 {
     VERIFY(m_rgb);
     yuv_buffer* yuv_rgb = m_rgb->CurrentFrame();
@@ -228,7 +230,10 @@ void CTheoraSurface::DecompressFrame(u32* data, u32 _width, int& _pos)
                     int G = clampr((298 * C - 100 * D - 208 * E + 128) >> 8, 0, 255);
                     int B = clampr((298 * C + 516 * D + 128) >> 8, 0, 255);
 
-                    data[pos] = color_rgba(R, G, B, 255);
+                    if (bRGBA)
+                        data[pos] = (255 << 24) | (B << 16) | (G << 8) | R;
+                    else
+                        data[pos] = color_rgba(R, G, B, 255);
 
                     pos++;
                 }
@@ -287,9 +292,16 @@ void CTheoraSurface::DecompressFrame(u32* data, u32 _width, int& _pos)
             for (u32 w = 0; w < width; ++w)
             {
                 u8 y = Y[w];
-                u32& clr = data[++pos];
-                clr = subst_alpha(clr, iFloor(float((y - 16)) / K));
+                u32& clr = data[pos];
+                int val = iFloor(float(int(y) - 16) / K);
+                u32 a = (u32)clampr(val, 0, 255);
+                if (bRGBA)
+                    clr = (clr & 0x00ffffff) | ((a & 0xff) << 24);
+                else
+                    clr = subst_alpha(clr, a);
+                pos++;
             }
+            pos += _width;
         }
     }
 }

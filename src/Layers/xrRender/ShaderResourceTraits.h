@@ -7,28 +7,40 @@ namespace xray::render::RENDER_NAMESPACE
 #ifdef USE_OGL
 static void show_compile_errors(cpcstr filename, GLuint program, GLuint shader)
 {
-    GLint length;
+    GLint length = 0;
     GLchar *errors = nullptr, *sources = nullptr;
 
     if (program)
     {
         CHK_GL(glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length));
-        errors = xr_alloc<GLchar>(length);
-        CHK_GL(glGetProgramInfoLog(program, length, nullptr, errors));
+        if (length > 0)
+        {
+            errors = xr_alloc<GLchar>(length + 1);
+            CHK_GL(glGetProgramInfoLog(program, length, nullptr, errors));
+            errors[length] = '\0';
+        }
     }
     else if (shader)
     {
         CHK_GL(glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length));
-        errors = xr_alloc<GLchar>(length);
-        CHK_GL(glGetShaderInfoLog(shader, length, nullptr, errors));
+        if (length > 0)
+        {
+            errors = xr_alloc<GLchar>(length + 1);
+            CHK_GL(glGetShaderInfoLog(shader, length, nullptr, errors));
+            errors[length] = '\0';
+        }
 
         CHK_GL(glGetShaderiv(shader, GL_SHADER_SOURCE_LENGTH, &length));
-        sources = xr_alloc<GLchar>(length);
-        CHK_GL(glGetShaderSource(shader, length, nullptr, sources));
+        if (length > 0)
+        {
+            sources = xr_alloc<GLchar>(length + 1);
+            CHK_GL(glGetShaderSource(shader, length, nullptr, sources));
+            sources[length] = '\0';
+        }
     }
 
     Log("! shader compilation failed:", filename);
-    if (errors)
+    if (errors && errors[0])
         Log("! error: ", errors);
 
     if (sources)
@@ -37,6 +49,15 @@ static void show_compile_errors(cpcstr filename, GLuint program, GLuint shader)
         Log(sources);
         Log("Shader source end.");
     }
+
+    if (errors && errors[0])
+        Log("! shader error details: ", errors);
+
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_ERROR, "OpenXRayShader", "! Shader error on '%s': %s",
+        filename ? filename : "unknown", (errors && errors[0]) ? errors : "<no log>");
+#endif
+
     xr_free(errors);
     xr_free(sources);
 }
@@ -70,10 +91,12 @@ inline std::pair<char, GLuint> GLCompileShader(pcstr* buffer, size_t size, pcstr
         CHK_GL(glProgramParameteri(program, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, (GLint)GL_TRUE));
 
     CHK_GL(glAttachShader(program, shader));
+#if !defined(__ANDROID__)
     CHK_GL(glBindFragDataLocation(program, 0, "SV_Target"));
     CHK_GL(glBindFragDataLocation(program, 0, "SV_Target0"));
     CHK_GL(glBindFragDataLocation(program, 1, "SV_Target1"));
     CHK_GL(glBindFragDataLocation(program, 2, "SV_Target2"));
+#endif
     CHK_GL(glLinkProgram(program));
     CHK_GL(glDetachShader(program, shader));
     CHK_GL(glDeleteShader(shader));
@@ -99,10 +122,12 @@ inline std::pair<char, GLuint> GLUseBinary(pcstr* buffer, size_t size, const GLe
         CHK_GL(glObjectLabel(GL_PROGRAM, program, -1, name));
     CHK_GL(glProgramParameteri(program, GL_PROGRAM_SEPARABLE, (GLint)GL_TRUE));
 
+#if !defined(__ANDROID__)
     CHK_GL(glBindFragDataLocation(program, 0, "SV_Target"));
     CHK_GL(glBindFragDataLocation(program, 0, "SV_Target0"));
     CHK_GL(glBindFragDataLocation(program, 1, "SV_Target1"));
     CHK_GL(glBindFragDataLocation(program, 2, "SV_Target2"));
+#endif
 
     CHK_GL(glProgramBinary(program, *format, buffer, size));
     CHK_GL(glGetProgramiv(program, GL_LINK_STATUS, &status));
@@ -118,6 +143,36 @@ inline std::pair<char, GLuint> GLUseBinary(pcstr* buffer, size_t size, const GLe
 
 static GLuint GLLinkMonolithicProgram(pcstr name, GLuint ps, GLuint vs, GLuint gs)
 {
+    if (vs == 0)
+    {
+        Msg("! GLLinkMonolithicProgram: Cannot link '%s' because vs=%u", name, vs);
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "OpenXRayShader", "! Cannot link '%s' because vs=%u", name, vs);
+#endif
+        return 0;
+    }
+
+    static GLuint dummy_ps = 0;
+    if (ps == 0)
+    {
+        if (dummy_ps == 0)
+        {
+            pcstr dummy_src =
+#if defined(__ANDROID__)
+                "#version 320 es\n"
+                "precision highp float;\n"
+                "void main() {}\n";
+#else
+                "#version 410\n"
+                "void main() {}\n";
+#endif
+            dummy_ps = glCreateShader(GL_FRAGMENT_SHADER);
+            CHK_GL(glShaderSource(dummy_ps, 1, &dummy_src, nullptr));
+            CHK_GL(glCompileShader(dummy_ps));
+        }
+        ps = dummy_ps;
+    }
+
     const GLuint program = glCreateProgram();
     R_ASSERT(program);
     if (glObjectLabel)
@@ -130,10 +185,12 @@ static GLuint GLLinkMonolithicProgram(pcstr name, GLuint ps, GLuint vs, GLuint g
     CHK_GL(glAttachShader(program, vs));
     if (gs)
         CHK_GL(glAttachShader(program, gs));
+#if !defined(__ANDROID__)
     CHK_GL(glBindFragDataLocation(program, 0, "SV_Target"));
     CHK_GL(glBindFragDataLocation(program, 0, "SV_Target0"));
     CHK_GL(glBindFragDataLocation(program, 1, "SV_Target1"));
     CHK_GL(glBindFragDataLocation(program, 2, "SV_Target2"));
+#endif
     CHK_GL(glLinkProgram(program));
     CHK_GL(glDetachShader(program, ps));
     CHK_GL(glDetachShader(program, vs));

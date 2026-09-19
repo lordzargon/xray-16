@@ -25,7 +25,7 @@ v2p_flat 	_main (v_detail v)
  	pos.x 		= dot	(m0, v.pos);
  	pos.y 		= dot	(m1, v.pos);
  	pos.z 		= dot	(m2, v.pos);
-	pos.w 		= 1;
+	pos.w 		= 1.0;
 
 	// 
 	float 	base 	= m1.w;
@@ -34,7 +34,7 @@ v2p_flat 	_main (v_detail v)
 	float 	frac 	= v.misc.z*consts.x;		// fractional
 	float 	inten 	= H * dp;
 	float2 	result	= calc_xz_wave	(dir2D.xz*inten,frac);
-	pos		= float4(pos.x+result.x, pos.y, pos.z+result.y, 1);
+	pos		= float4(pos.x+result.x, pos.y, pos.z+result.y, 1.0);
 
 	// Normal in world coords
 	float3 	norm;	//	= float3(0,1,0);

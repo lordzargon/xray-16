@@ -412,7 +412,7 @@ target_link_libraries(xrRender_GL
     xrParticles
     xrScriptEngine
     xrImGui
-    $<$<BOOL:${ANDROID}>:GLESv3 EGL>
+    $<$<BOOL:${ANDROID}>:GLESv3 EGL log>
 )
 
 target_compile_definitions(xrRender_GL

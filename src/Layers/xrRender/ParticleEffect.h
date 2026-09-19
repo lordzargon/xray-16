@@ -84,14 +84,14 @@ public:
     virtual BOOL GetHudMode() { return m_RT_Flags.is(flRT_HUDmode); }
     virtual float GetTimeLimit()
     {
-        VERIFY(m_Def);
+        if (!m_Def)
+            return -1.f;
         return m_Def->m_Flags.is(CPEDef::dfTimeLimit) ? m_Def->m_fTimeLimit : -1.f;
     }
 
     virtual const shared_str Name()
     {
-        VERIFY(m_Def);
-        return m_Def->m_Name;
+        return m_Def ? m_Def->m_Name : shared_str();
     }
 
     void SetDestroyCB(DestroyCallback destroy_cb) { m_DestroyCallback = destroy_cb; }

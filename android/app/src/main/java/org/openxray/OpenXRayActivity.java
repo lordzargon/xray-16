@@ -83,6 +83,15 @@ public class OpenXRayActivity extends SDLActivity {
     }
 
     @Override
+    protected String[] getArguments() {
+        return new String[] {
+            "-fsltx",
+            "/sdcard/Android/data/org.openxray/files/fsgame.ltx",
+            "-nogameintro"
+        };
+    }
+
+    @Override
     protected String[] getLibraries() {
         return new String[] {
             // C++ runtime and third-party shared dependencies

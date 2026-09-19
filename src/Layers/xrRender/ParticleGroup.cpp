@@ -58,7 +58,11 @@ BOOL CPGDef::Load(IReader& F)
     }
 
     R_ASSERT(F.find_chunk(PGD_CHUNK_NAME));
-    F.r_stringZ(m_Name);
+    string256 name_buf;
+    F.r_stringZ(name_buf, sizeof(name_buf));
+    for (char* p = name_buf; *p; ++p)
+        if (*p == '/') *p = '\\';
+    m_Name = name_buf;
 
     F.r_chunk(PGD_CHUNK_FLAGS, &m_Flags);
 

@@ -148,14 +148,12 @@ public:
 
     virtual float GetTimeLimit()
     {
-        VERIFY(m_Def);
-        return m_Def->m_fTimeLimit;
+        return m_Def ? m_Def->m_fTimeLimit : 0.0f;
     }
 
     virtual const shared_str Name()
     {
-        VERIFY(m_Def);
-        return m_Def->m_Name;
+        return m_Def ? m_Def->m_Name : shared_str();
     }
 
     virtual u32 ParticlesCount();

@@ -95,7 +95,14 @@ void node::export_all(lua_State* luaState)
         sorted = true;
     }
 
+    xr_vector<export_func> executed;
     for (auto node = first_node; node; node = node->m_next_node)
-        node->m_export_func(luaState);
+    {
+        if (std::find(executed.begin(), executed.end(), node->m_export_func) == executed.end())
+        {
+            executed.push_back(node->m_export_func);
+            node->m_export_func(luaState);
+        }
+    }
 }
 } // namespace xray::script_export

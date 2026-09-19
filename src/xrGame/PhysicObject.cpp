@@ -27,12 +27,14 @@ bool CPhysicObject::net_Spawn(CSE_Abstract* DC)
 {
     CSE_Abstract* e = (CSE_Abstract*)(DC);
     CSE_ALifeObjectPhysic* po = smart_cast<CSE_ALifeObjectPhysic*>(e);
-    R_ASSERT(po);
+    if (!po)
+        return false;
     m_type = EPOType(po->type);
     m_mass = po->mass;
     m_collision_hit_callback = NULL;
     m_anim_blend = 0;
-    inherited::net_Spawn(DC);
+    if (!inherited::net_Spawn(DC))
+        return false;
 
     create_collision_model();
 
@@ -40,7 +42,7 @@ bool CPhysicObject::net_Spawn(CSE_Abstract* DC)
     setVisible(TRUE);
     setEnabled(TRUE);
 
-    if (!PPhysicsShell()->isBreakable() && !scriptBinder.object() && !CPHSkeleton::IsRemoving())
+    if (PPhysicsShell() && !PPhysicsShell()->isBreakable() && !scriptBinder.object() && !CPHSkeleton::IsRemoving())
         SheduleUnregister();
 
     // if (PPhysicsShell()->Animated())
@@ -81,9 +83,11 @@ void CPhysicObject::create_collision_model()
 {
     xr_delete(CForm);
 
-    VERIFY(Visual());
+    if (!Visual())
+        return;
     IKinematics* K = Visual()->dcast_PKinematics();
-    VERIFY(K);
+    if (!K)
+        return;
 
     CInifile* ini = K->LL_UserData();
     if (ini && ini->section_exist("collide") && ini->line_exist("collide", "mesh") && ini->r_bool("collide", "mesh"))
@@ -93,18 +97,6 @@ void CPhysicObject::create_collision_model()
     }
 
     CForm = xr_new<CCF_Skeleton>(this);
-
-    /*
-    switch(m_type) {
-        case epotBox:
-        case epotFixedChain:
-        case epotFreeChain :
-        case epotSkeleton  :	collidable.model = new CCF_Skeleton(this);	break;
-
-        default: NODEFAULT;
-
-    }
-    */
 }
 void CPhysicObject::play_bones_sound()
 {
@@ -186,21 +178,14 @@ void CPhysicObject::RunStartupAnim(CSE_Abstract* D)
 {
     if (Visual() && smart_cast<IKinematics*>(Visual()))
     {
-        //		CSE_PHSkeleton	*po	= smart_cast<CSE_PHSkeleton*>(D);
-        IKinematicsAnimated* PKinematicsAnimated = NULL;
-        R_ASSERT(Visual() && smart_cast<IKinematics*>(Visual()));
-        PKinematicsAnimated = smart_cast<IKinematicsAnimated*>(Visual());
+        IKinematicsAnimated* PKinematicsAnimated = smart_cast<IKinematicsAnimated*>(Visual());
         if (PKinematicsAnimated)
         {
             CSE_Visual* visual = smart_cast<CSE_Visual*>(D);
-            R_ASSERT(visual);
-            R_ASSERT2(visual->startup_animation.c_str(), "no startup animation");
-
-            VERIFY2((!!PKinematicsAnimated->LL_MotionID(visual->startup_animation.c_str()).valid()),
-                (make_string(" animation %s not faund ", visual->startup_animation.c_str()) +
-                    dbg_object_base_dump_string(this))
-                    .c_str());
-            m_anim_blend = m_anim_script_callback.play_cycle(PKinematicsAnimated, visual->startup_animation);
+            if (visual && visual->startup_animation.size())
+            {
+                m_anim_blend = m_anim_script_callback.play_cycle(PKinematicsAnimated, visual->startup_animation);
+            }
         }
         smart_cast<IKinematics*>(Visual())->CalculateBones_Invalidate();
         smart_cast<IKinematics*>(Visual())->CalculateBones(TRUE);
@@ -296,11 +281,20 @@ void CPhysicObject::CreateSkeleton(CSE_ALifeObjectPhysic* po)
         return;
     if (!Visual())
         return;
+    IKinematics* K = Visual()->dcast_PKinematics();
+    if (!K)
+    {
+        Msg("! [CPhysicObject::CreateSkeleton] Visual '%s' for object '%s' is not IKinematics", cNameVisual().c_str(), cName().c_str());
+        return;
+    }
     LPCSTR fixed_bones = po->fixed_bones.c_str();
     m_pPhysicsShell = P_build_Shell(this, !po->_flags.test(CSE_PHSkeleton::flActive), fixed_bones);
-    ApplySpawnIniToPhysicShell(&po->spawn_ini(), m_pPhysicsShell, fixed_bones[0] != '\0');
-    ApplySpawnIniToPhysicShell(
-        smart_cast<IKinematics*>(Visual())->LL_UserData(), m_pPhysicsShell, fixed_bones[0] != '\0');
+    if (!m_pPhysicsShell)
+        return;
+
+    bool has_fixed = fixed_bones && (fixed_bones[0] != '\0');
+    ApplySpawnIniToPhysicShell(&po->spawn_ini(), m_pPhysicsShell, has_fixed);
+    ApplySpawnIniToPhysicShell(K->LL_UserData(), m_pPhysicsShell, has_fixed);
 }
 
 void CPhysicObject::Load(LPCSTR section)
@@ -328,7 +322,7 @@ void CPhysicObject::UpdateCL()
 
     //Если наш физический объект анимированный, то
     //двигаем объект за анимацией
-    if (m_pPhysicsShell->PPhysicsShellAnimator())
+    if (m_pPhysicsShell && m_pPhysicsShell->PPhysicsShellAnimator())
     {
         m_pPhysicsShell->AnimatorOnFrame();
     }
@@ -414,7 +408,7 @@ void CPhysicObject::CreateBody(CSE_ALifeObjectPhysic* po)
 {
     if (m_pPhysicsShell)
         return;
-    IKinematics* pKinematics = smart_cast<IKinematics*>(Visual());
+    IKinematics* pKinematics = Visual() ? Visual()->dcast_PKinematics() : nullptr;
     switch (m_type)
     {
     case epotBox:
@@ -425,10 +419,13 @@ void CPhysicObject::CreateBody(CSE_ALifeObjectPhysic* po)
     case epotFixedChain:
     case epotFreeChain:
     {
-        m_pPhysicsShell = P_create_Shell();
-        m_pPhysicsShell->set_Kinematics(pKinematics);
-        AddElement(0, pKinematics->LL_GetBoneRoot());
-        m_pPhysicsShell->setMass1(m_mass);
+        if (pKinematics)
+        {
+            m_pPhysicsShell = P_create_Shell();
+            m_pPhysicsShell->set_Kinematics(pKinematics);
+            AddElement(0, pKinematics->LL_GetBoneRoot());
+            m_pPhysicsShell->setMass1(m_mass);
+        }
     }
     break;
 
@@ -440,6 +437,9 @@ void CPhysicObject::CreateBody(CSE_ALifeObjectPhysic* po)
     break;
     }
 
+    if (!m_pPhysicsShell)
+        return;
+
     m_pPhysicsShell->mXFORM.set(XFORM());
     m_pPhysicsShell->SetAirResistance(0.001f, 0.02f);
     if (pKinematics)
@@ -448,7 +448,6 @@ void CPhysicObject::CreateBody(CSE_ALifeObjectPhysic* po)
         disable_params.Load(pKinematics->LL_UserData());
         m_pPhysicsShell->set_DisableParams(disable_params);
     }
-    // m_pPhysicsShell->SetAirResistance(0.002f, 0.3f);
 }
 
 bool CPhysicObject::net_SaveRelevant()

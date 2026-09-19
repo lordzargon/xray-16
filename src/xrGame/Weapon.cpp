@@ -163,8 +163,9 @@ void CWeapon::UpdateXForm()
     if (!parent || parent->attached(this))
         return;
 
-    IKinematics* V = smart_cast<IKinematics*>(E->Visual());
-    VERIFY(V);
+    IKinematics* V = E->Visual() ? PKinematics(E->Visual()) : nullptr;
+    if (!V)
+        return;
 
     // Get matrices
     int boneL = -1, boneR = -1, boneR2 = -1;

@@ -161,24 +161,32 @@ void CCharacterPhysicsSupport::in_NetSpawn(CSE_Abstract* e)
     IKinematicsAnimated* ka = smart_cast<IKinematicsAnimated*>(pVisual);
     IKinematics* pK = smart_cast<IKinematics*>(pVisual);
     VERIFY(&e->spawn_ini());
-    m_death_anims.setup(ka, e->s_name.c_str(), pSettings);
+    if (ka)
+        m_death_anims.setup(ka, e->s_name.c_str(), pSettings);
     if (!m_EntityAlife.g_Alive())
     {
         if (m_eType == etStalker)
         {
             // pK->LL_GetData( 0 ).shape.flags.set(SBoneShape::sfVisibilityIgnore,TRUE);
             // pK->LL_GetData( pK->LL_BoneID("bip01") ).shape.flags.set(SBoneShape::sfVisibilityIgnore,TRUE);
-            ka->PlayCycle("waunded_1_idle_0");
+            if (ka && ka->ID_Cycle_Safe("waunded_1_idle_0"))
+                ka->PlayCycle("waunded_1_idle_0");
         }
-        else
+        else if (ka && ka->ID_Cycle_Safe("death_init"))
             ka->PlayCycle("death_init");
     }
     else if (!m_EntityAlife.animation_movement_controlled())
-        ka->PlayCycle("death_init"); ///непонятно зачем это вообще надо запускать
+    {
+        if (ka && ka->ID_Cycle_Safe("death_init"))
+            ka->PlayCycle("death_init"); ///непонятно зачем это вообще надо запускать
+    }
     ///этот хак нужен, потому что некоторым монстрам
     ///анимация после спона, может быть вообще не назначена
-    pK->CalculateBones_Invalidate();
-    pK->CalculateBones(TRUE);
+    if (pK)
+    {
+        pK->CalculateBones_Invalidate();
+        pK->CalculateBones(TRUE);
+    }
 
     CPHSkeleton::Spawn(e);
     movement()->EnableCharacter();
@@ -189,9 +197,9 @@ void CCharacterPhysicsSupport::in_NetSpawn(CSE_Abstract* e)
         m_flags.set(fl_specific_bonce_demager, TRUE);
         m_BonceDamageFactor = 1.f;
     }
-    if (Type() == etStalker)
+    if (Type() == etStalker && ka)
     {
-        m_hit_animations.SetupHitMotions(*smart_cast<IKinematicsAnimated*>(m_EntityAlife.Visual()));
+        m_hit_animations.SetupHitMotions(*ka);
     }
     anim_mov_state.init();
 
@@ -243,9 +251,11 @@ void CCharacterPhysicsSupport::SpawnInitPhysics(CSE_Abstract* e)
         }
 #endif
 #ifdef USE_IK
-        if (etStalker == m_eType || etActor == m_eType ||
-            (m_EntityAlife.Visual()->dcast_PKinematics()->LL_UserData() &&
-                m_EntityAlife.Visual()->dcast_PKinematics()->LL_UserData()->section_exist("ik")))
+        if ((etStalker == m_eType || etActor == m_eType ||
+            (m_EntityAlife.Visual() && m_EntityAlife.Visual()->dcast_PKinematics() &&
+                m_EntityAlife.Visual()->dcast_PKinematics()->LL_UserData() &&
+                m_EntityAlife.Visual()->dcast_PKinematics()->LL_UserData()->section_exist("ik"))) &&
+            m_EntityAlife.Visual())
             CreateIKController();
 #endif
         VERIFY(pSettings);

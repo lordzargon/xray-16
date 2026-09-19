@@ -124,7 +124,15 @@ IC int CObjectFactory::script_clsid(const CLASS_ID& clsid) const
 
 inline CObjectFactory::ClientObjectBaseClass* CObjectFactory::client_object(const CLASS_ID& clsid) const
 {
-    return (item(clsid).client_object());
+    const CObjectItemAbstract* obj_item = item(clsid, true);
+    if (!obj_item)
+    {
+        string16 temp;
+        CLSID2TEXT(clsid, temp);
+        Msg("! [CObjectFactory::client_object] Object item for CLSID '%s' is NOT registered!", temp);
+        return nullptr;
+    }
+    return obj_item->client_object();
 }
 
 inline CObjectFactory::ServerObjectBaseClass* CObjectFactory::server_object(const CLASS_ID& clsid, LPCSTR section) const

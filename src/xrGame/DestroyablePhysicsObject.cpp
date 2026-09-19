@@ -41,7 +41,15 @@ void CDestroyablePhysicsObject::net_Destroy()
 bool CDestroyablePhysicsObject::net_Spawn(CSE_Abstract* DC)
 {
     BOOL res = inherited::net_Spawn(DC);
-    IKinematics* K = smart_cast<IKinematics*>(Visual());
+    if (!res)
+        return FALSE;
+
+    IKinematics* K = Visual() ? smart_cast<IKinematics*>(Visual()) : nullptr;
+    if (!K)
+    {
+        Msg("! [CDestroyablePhysicsObject::net_Spawn] Visual for '%s' is not IKinematics", cName().c_str());
+        return FALSE;
+    }
     CInifile* ini = K->LL_UserData();
     // R_ASSERT2(ini->section_exist("destroyed"),"destroyable_object must have -destroyed- section in model user data");
     CPHDestroyable::Init();

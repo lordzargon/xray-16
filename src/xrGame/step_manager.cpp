@@ -44,7 +44,12 @@ void CStepManager::reload(LPCSTR section)
     LPCSTR anim_name, val;
     string16 cur_elem;
 
+    if (!m_object || !m_object->Visual())
+        return;
+
     IKinematicsAnimated* skeleton_animated = smart_cast<IKinematicsAnimated*>(m_object->Visual());
+    if (!skeleton_animated)
+        return;
 
     VERIFY3(skeleton_animated, "object is not animated", m_object->cNameVisual().c_str());
 #ifdef DEBUG
@@ -289,7 +294,14 @@ void CStepManager::load_foot_bones(CInifile::Sect& data)
 
 void CStepManager::reload_foot_bones()
 {
-    CInifile* ini = smart_cast<IKinematics*>(m_object->Visual())->LL_UserData();
+    if (!m_object || !m_object->Visual())
+        return;
+
+    IKinematics* kinematics = smart_cast<IKinematics*>(m_object->Visual());
+    if (!kinematics)
+        return;
+
+    CInifile* ini = kinematics->LL_UserData();
     if (ini && ini->section_exist("foot_bones"))
     {
         load_foot_bones(ini->r_section("foot_bones"));

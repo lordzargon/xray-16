@@ -26,7 +26,7 @@ v2p_bumped 	_main 	(v_tree I)
 #ifdef		USE_TREEWAVE
 			result	= float2(0.0);
 #endif
-	float4 	w_pos 	= float4(pos.x+result.x, pos.y, pos.z+result.y, 1);
+	float4 	w_pos 	= float4(pos.x+result.x, pos.y, pos.z+result.y, 1.0);
 	float2 	tc 		= (I.tc * consts).xy;
 	float 	hemi 	= I.Nh.w * c_scale.w + c_bias.w;
 //	float 	hemi 	= I.Nh.w;

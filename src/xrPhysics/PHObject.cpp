@@ -121,8 +121,7 @@ void CPHObject::Collide()
             for (; i != e; ++i)
             {
                 CPHObject* obj2 = smart_cast<CPHObject*>(*i);
-                VERIFY(obj2);
-                if (obj2 == this || !obj2->m_flags.test(st_dirty))
+                if (!obj2 || obj2 == this || !obj2->m_flags.test(st_dirty))
                     continue;
                 dGeomID motion_ray = ph_world->GetMotionRayGeom();
                 dGeomRayMotionSetGeom(motion_ray, I.dGeom());
@@ -145,8 +144,7 @@ void CPHObject::CollideDynamics()
     for (; i != e; ++i)
     {
         CPHObject* obj2 = smart_cast<CPHObject*>(*i);
-        VERIFY(obj2);
-        if (obj2 == this || !obj2->m_flags.test(st_dirty))
+        if (!obj2 || obj2 == this || !obj2->m_flags.test(st_dirty))
             continue;
         if (CPHCollideValidator::DoCollide(*this, *obj2))
             NearCallback(this, obj2, dSpacedGeom(), obj2->dSpacedGeom());
@@ -160,8 +158,8 @@ void CPHObject::reinit_single()
     for (; i != e; ++i)
     {
         CPHObject* obj = smart_cast<CPHObject*>(*i);
-        VERIFY(obj);
-        obj->IslandReinit();
+        if (obj)
+            obj->IslandReinit();
     }
     result.clear();
     dJointGroupEmpty(ContactGroup);

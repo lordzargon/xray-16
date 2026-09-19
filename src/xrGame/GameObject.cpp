@@ -283,8 +283,8 @@ void CGameObject::net_Destroy()
 
     xr_delete(m_ini_file);
 
-    if (Visual() && smart_cast<IKinematics*>(Visual()))
-        smart_cast<IKinematics*>(Visual())->Callback(0, 0);
+    if (Visual() && PKinematics(Visual()))
+        PKinematics(Visual())->Callback(0, 0);
     //
     VERIFY(getDestroy());
     xr_delete(CForm);
@@ -1103,34 +1103,38 @@ bool CGameObject::UsedAI_Locations() { return (m_server_flags.test(CSE_ALifeObje
 bool CGameObject::TestServerFlag(u32 Flag) const { return (m_server_flags.test(Flag)); }
 void CGameObject::add_visual_callback(visual_callback callback)
 {
-    VERIFY(smart_cast<IKinematics*>(Visual()));
+    if (!Visual() || !PKinematics(Visual()))
+        return;
     [[maybe_unused]] auto I = std::find(visual_callbacks().begin(), visual_callbacks().end(), callback);
     VERIFY(I == visual_callbacks().end());
 
     if (m_visual_callback.empty())
         SetKinematicsCallback(true);
-    //		smart_cast<IKinematics*>(Visual())->Callback(VisualCallback,this);
     m_visual_callback.push_back(callback);
 }
 
 void CGameObject::remove_visual_callback(visual_callback callback)
 {
     CALLBACK_VECTOR_IT I = std::find(m_visual_callback.begin(), m_visual_callback.end(), callback);
-    VERIFY(I != m_visual_callback.end());
-    m_visual_callback.erase(I);
-    if (m_visual_callback.empty())
-        SetKinematicsCallback(false);
-    //		smart_cast<IKinematics*>(Visual())->Callback(0,0);
+    if (I != m_visual_callback.end())
+    {
+        m_visual_callback.erase(I);
+        if (m_visual_callback.empty())
+            SetKinematicsCallback(false);
+    }
 }
 
 void CGameObject::SetKinematicsCallback(bool set)
 {
     if (!Visual())
         return;
+    IKinematics* K = PKinematics(Visual());
+    if (!K)
+        return;
     if (set)
-        smart_cast<IKinematics*>(Visual())->Callback(VisualCallback, this);
+        K->Callback(VisualCallback, this);
     else
-        smart_cast<IKinematics*>(Visual())->Callback(0, 0);
+        K->Callback(0, 0);
 };
 
 void VisualCallback(IKinematics* tpKinematics)

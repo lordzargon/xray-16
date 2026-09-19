@@ -253,9 +253,15 @@ void CPhysicsShellHolder::setup_physic_shell()
 {
     VERIFY(!m_pPhysicsShell);
     create_physic_shell();
+    if (!m_pPhysicsShell)
+        return;
     m_pPhysicsShell->Activate(XFORM(), 0, XFORM());
-    smart_cast<IKinematics*>(Visual())->CalculateBones_Invalidate();
-    smart_cast<IKinematics*>(Visual())->CalculateBones(TRUE);
+    IKinematics* K = PKinematics(Visual());
+    if (K)
+    {
+        K->CalculateBones_Invalidate();
+        K->CalculateBones(TRUE);
+    }
 
     ApplySpawnIniToPhysicShell(spawn_ini(), PPhysicsShell(), false);
     correct_spawn_pos();

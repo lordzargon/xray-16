@@ -22,14 +22,15 @@
         android:allowBackup="true"
         android:extractNativeLibs="true"
         android:requestLegacyExternalStorage="true"
-        android:hardwareAccelerated="true">
+        android:hardwareAccelerated="true"
+        android:allowNativeHeapPointerTagging="false">
 
         <activity
             android:name="org.openxray.OpenXRayActivity"
             android:label="@string/app_name"
             android:alwaysRetainTaskState="true"
             android:launchMode="singleInstance"
-            android:screenOrientation="sensorLandscape"
+            android:screenOrientation="landscape"
             android:configChanges="layoutDirection|locale|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
             android:exported="true">

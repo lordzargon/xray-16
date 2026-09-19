@@ -19,6 +19,9 @@
 
 void os_clipboard::copy_to_clipboard(pcstr buf, bool alreadyUTF8 /*= false*/)
 {
+#if defined(__ANDROID__)
+    return;
+#else
     int result;
     if (alreadyUTF8)
     {
@@ -35,6 +38,7 @@ void os_clipboard::copy_to_clipboard(pcstr buf, bool alreadyUTF8 /*= false*/)
         Msg("! Failed to copy text to the clipboard: %s", SDL_GetError());
         Log(buf);
     }
+#endif
 }
 
 void os_clipboard::paste_from_clipboard(pstr buffer, size_t buffer_size)
@@ -42,6 +46,11 @@ void os_clipboard::paste_from_clipboard(pstr buffer, size_t buffer_size)
     VERIFY(buffer);
     VERIFY(buffer_size > 0);
 
+#if defined(__ANDROID__)
+    if (buffer && buffer_size > 0)
+        buffer[0] = 0;
+    return;
+#else
     if (!SDL_HasClipboardText())
         return;
 
@@ -68,10 +77,14 @@ void os_clipboard::paste_from_clipboard(pstr buffer, size_t buffer_size)
             buffer[i] = ' ';
         }
     }
+#endif
 }
 
 void os_clipboard::update_clipboard(pcstr string)
 {
+#if defined(__ANDROID__)
+    return;
+#else
     if (!string)
     {
         Log("! Why are you trying to copy nullptr to the clipboard?!");
@@ -109,4 +122,5 @@ void os_clipboard::update_clipboard(pcstr string)
     SDL_free(clipData);
 
     copy_to_clipboard(buffer, true);
+#endif
 }

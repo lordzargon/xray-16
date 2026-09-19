@@ -6,6 +6,11 @@
 
 #ifdef XR_PLATFORM_WINDOWS
 #   include <DbgHelp.h>
+#elif defined(__ANDROID__)
+#   include <unwind.h>
+#   include <dlfcn.h>
+#   include <cxxabi.h>
+#   define ANDROID_BACKTRACE_AVAILABLE
 #elif defined(XR_PLATFORM_LINUX) || defined(XR_PLATFORM_APPLE) || defined(XR_PLATFORM_BSD)
 #   if __has_include(<execinfo.h>)
 #       include <execinfo.h>
@@ -298,6 +303,99 @@ xr_vector<xr_string> BuildStackTrace(u16 maxFramesCount)
     }
 
     return result;
+}
+#elif defined(ANDROID_BACKTRACE_AVAILABLE)
+struct AndroidBacktraceState
+{
+    void** current;
+    void** end;
+};
+
+static _Unwind_Reason_Code androidUnwindCallback(struct _Unwind_Context* context, void* arg)
+{
+    AndroidBacktraceState* state = static_cast<AndroidBacktraceState*>(arg);
+    uintptr_t pc = _Unwind_GetIP(context);
+    if (pc)
+    {
+        if (state->current >= state->end)
+            return _URC_END_OF_STACK;
+        *state->current++ = reinterpret_cast<void*>(pc);
+    }
+    return _URC_NO_REASON;
+}
+
+xr_vector<xr_string> BuildStackTrace(u16 maxFramesCount)
+{
+    xr_vector<xr_string> result;
+    void** array = reinterpret_cast<void**>(xr_alloca(sizeof(void*) * maxFramesCount));
+    AndroidBacktraceState state = { array, array + maxFramesCount };
+    _Unwind_Backtrace(androidUnwindCallback, &state);
+    const size_t nptrs = state.current - array;
+
+    size_t demangledBufSize = 0;
+    char* demangledName = nullptr;
+    for (size_t i = 1; i < nptrs; i++)
+    {
+        Dl_info info{};
+        char frameBuffer[1024];
+        if (dladdr(array[i], &info) && info.dli_fname)
+        {
+            const char* symbol = info.dli_sname;
+            if (symbol)
+            {
+                int status = -1;
+                demangledName = abi::__cxa_demangle(symbol, demangledName, &demangledBufSize, &status);
+                if (status == 0 && demangledName)
+                    symbol = demangledName;
+            }
+            uintptr_t offset = reinterpret_cast<uintptr_t>(array[i]) - reinterpret_cast<uintptr_t>(info.dli_fbase);
+            xr_sprintf(frameBuffer, "#%02zu pc 0x%zx %s (%s+0x%zx) [%p]",
+                i, offset, info.dli_fname, symbol ? symbol : "???", offset, array[i]);
+        }
+        else
+        {
+            xr_sprintf(frameBuffer, "#%02zu [%p]", i, array[i]);
+        }
+        result.emplace_back(frameBuffer);
+    }
+    ::free(demangledName);
+    return result;
+}
+
+extern "C" void __cxa_throw(void* thrown_exception, std::type_info* tinfo, void (*dest)(void*))
+{
+    static void (*real_cxa_throw)(void*, std::type_info*, void(*)(void*)) = nullptr;
+    if (!real_cxa_throw)
+    {
+        void* handle = dlopen("libc++_shared.so", RTLD_NOW);
+        if (handle)
+            real_cxa_throw = (void (*)(void*, std::type_info*, void(*)(void*)))dlsym(handle, "__cxa_throw");
+        if (!real_cxa_throw)
+            real_cxa_throw = (void (*)(void*, std::type_info*, void(*)(void*)))dlsym(RTLD_NEXT, "__cxa_throw");
+    }
+
+    static thread_local bool in_cxa_throw = false;
+    if (!in_cxa_throw)
+    {
+        in_cxa_throw = true;
+        const char* type_name = "unknown";
+        if (tinfo)
+            type_name = tinfo->name();
+
+        int status = -1;
+        char* demangled = abi::__cxa_demangle(type_name, nullptr, nullptr, &status);
+        Msg("! [C++ EXCEPTION THROWN] type: %s", (status == 0 && demangled) ? demangled : type_name);
+        ::free(demangled);
+
+        xrDebug::LogStackTrace("Exception origin stack:");
+        in_cxa_throw = false;
+    }
+
+    if (real_cxa_throw)
+    {
+        real_cxa_throw(thrown_exception, tinfo, dest);
+    }
+    abort();
 }
 #else
 xr_vector<xr_string> BuildStackTrace(u16 maxFramesCount)

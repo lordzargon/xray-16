@@ -126,7 +126,7 @@ void CArtefact::OnH_A_Chield()
     }
     else
     {
-        IKinematics* K = smart_cast<IKinematics*>(H_Parent()->Visual());
+        IKinematics* K = H_Parent() && H_Parent()->Visual() ? PKinematics(H_Parent()->Visual()) : nullptr;
         if (K)
             m_CarringBoneID = K->LL_BoneID("bip01_head");
         else
@@ -345,8 +345,9 @@ void CArtefact::UpdateXForm()
         if (!E)
             return;
 
-        IKinematics* V = smart_cast<IKinematics*>(E->Visual());
-        VERIFY(V);
+        IKinematics* V = E->Visual() ? PKinematics(E->Visual()) : nullptr;
+        if (!V)
+            return;
         if (CAttachableItem::enabled())
             return;
 
@@ -507,13 +508,14 @@ void SArtefactDetectorsSupport::SetVisible(bool b)
         LPCSTR curr =
             pSettings->r_string(m_parent->cNameSect().c_str(), (b) ? "det_show_particles" : "det_hide_particles");
 
-        IKinematics* K = smart_cast<IKinematics*>(m_parent->Visual());
-        R_ASSERT2(K, m_parent->cNameSect().c_str());
-        LPCSTR bone = pSettings->r_string(m_parent->cNameSect().c_str(), "particles_bone");
-        u16 bone_id = K->LL_BoneID(bone);
-        R_ASSERT2(bone_id != BI_NONE, bone);
-
-        m_parent->CParticlesPlayer::StartParticles(curr, bone_id, Fvector().set(0, 1, 0), m_parent->ID());
+        IKinematics* K = m_parent->Visual() ? PKinematics(m_parent->Visual()) : nullptr;
+        if (K)
+        {
+            LPCSTR bone = pSettings->r_string(m_parent->cNameSect().c_str(), "particles_bone");
+            u16 bone_id = K->LL_BoneID(bone);
+            if (bone_id != BI_NONE)
+                m_parent->CParticlesPlayer::StartParticles(curr, bone_id, Fvector().set(0, 1, 0), m_parent->ID());
+        }
 
         curr = pSettings->r_string(m_parent->cNameSect().c_str(), (b) ? "det_show_snd" : "det_hide_snd");
         m_sound.create(curr, st_Effect, sg_SourceType);
@@ -528,13 +530,14 @@ void SArtefactDetectorsSupport::Blink()
 {
     LPCSTR curr = pSettings->r_string(m_parent->cNameSect().c_str(), "det_show_particles");
 
-    IKinematics* K = smart_cast<IKinematics*>(m_parent->Visual());
-    R_ASSERT2(K, m_parent->cNameSect().c_str());
-    LPCSTR bone = pSettings->r_string(m_parent->cNameSect().c_str(), "particles_bone");
-    u16 bone_id = K->LL_BoneID(bone);
-    R_ASSERT2(bone_id != BI_NONE, bone);
-
-    m_parent->CParticlesPlayer::StartParticles(curr, bone_id, Fvector().set(0, 1, 0), m_parent->ID(), 1000, true);
+    IKinematics* K = m_parent->Visual() ? PKinematics(m_parent->Visual()) : nullptr;
+    if (K)
+    {
+        LPCSTR bone = pSettings->r_string(m_parent->cNameSect().c_str(), "particles_bone");
+        u16 bone_id = K->LL_BoneID(bone);
+        if (bone_id != BI_NONE)
+            m_parent->CParticlesPlayer::StartParticles(curr, bone_id, Fvector().set(0, 1, 0), m_parent->ID(), 1000, true);
+    }
 }
 
 void SArtefactDetectorsSupport::UpdateOnFrame()

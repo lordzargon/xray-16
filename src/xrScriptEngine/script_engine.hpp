@@ -214,7 +214,7 @@ public:
     static int lua_panic(lua_State* L);
     static void lua_error(lua_State* L);
     static int lua_pcall_failed(lua_State* L);
-#if !XRAY_EXCEPTIONS
+#if !XRAY_EXCEPTIONS || defined(LUABIND_NO_EXCEPTIONS)
     static void lua_cast_failed(lua_State* L, const luabind::type_id& info);
 #endif
     static void lua_hook_call(lua_State* L, lua_Debug* dbg);

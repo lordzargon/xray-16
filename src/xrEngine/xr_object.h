@@ -116,7 +116,7 @@ public:
 // virtual void spatial_move() override = 0;
 // virtual Fvector spatial_sector_point() override = 0;
 // virtual void spatial_updatesector() override = 0;
-// virtual IGameObject *dcast_GameObject() override = 0;
+    virtual IGameObject* dcast_GameObject() override = 0;
 // virtual Feel::Sound *dcast_FeelSound() override = 0;
 // virtual IRenderable *dcast_Renderable() override = 0;
 // virtual IRender_Light *dcast_Light() override = 0;

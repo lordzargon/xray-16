@@ -110,8 +110,11 @@ moving_bones_snd_player* create_moving_bones_snd_player(CInifile* ini, IKinemati
 
 moving_bones_snd_player* create_moving_bones_snd_player(CGameObject& O)
 {
+    if (!O.Visual())
+        return nullptr;
     IKinematics* K = smart_cast<IKinematics*>(O.Visual());
-    VERIFY(K);
+    if (!K)
+        return nullptr;
     moving_bones_snd_player* ret = create_moving_bones_snd_player(O.spawn_ini(), *K, O.XFORM());
     if (ret)
         return ret;
