@@ -47,10 +47,10 @@ float sample_hw_pcf (float4 tc,float4 shift)
 
 float shadow_hw( float4 tc )
 {
-  	float	s0		= sample_hw_pcf( tc, float4( -1, -1, 0, 0) );
-  	float	s1		= sample_hw_pcf( tc, float4( +1, -1, 0, 0) );
-  	float	s2		= sample_hw_pcf( tc, float4( -1, +1, 0, 0) );
-  	float	s3		= sample_hw_pcf( tc, float4( +1, +1, 0, 0) );
+  	float	s0		= sample_hw_pcf( tc, float4( -1.0, -1.0, 0.0, 0.0 ) );
+  	float	s1		= sample_hw_pcf( tc, float4(  1.0, -1.0, 0.0, 0.0 ) );
+  	float	s2		= sample_hw_pcf( tc, float4( -1.0,  1.0, 0.0, 0.0 ) );
+  	float	s3		= sample_hw_pcf( tc, float4(  1.0,  1.0, 0.0, 0.0 ) );
 
 	return	(s0+s1+s2+s3)/4.0;
 }
@@ -758,7 +758,7 @@ float shadow( float4 tc )
 
 float shadow_volumetric( float4 tc ) 
 {
-	return sample_hw_pcf	(tc,float4(-1,-1,0,0)); 
+	return sample_hw_pcf	(tc, float4(-1.0, -1.0, 0.0, 0.0)); 
 }
 
 

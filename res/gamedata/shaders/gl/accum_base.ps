@@ -52,7 +52,7 @@ float4 _main( p_volume I )
         float4        		light   = plight_local( m, _P.xyz, _N.xyz, Ldynamic_pos.xyz, Ldynamic_pos.w, rsqr );
 
         // ----- shadow
-		float4          		P4      = float4( _P.x, _P.y, _P.z, 1);
+		float4          		P4      = float4( _P.x, _P.y, _P.z, 1.0);
         float4         		PS      = mul( m_shadow, P4 );
         float         		s		= 1.0;
         #ifdef  USE_SHADOW

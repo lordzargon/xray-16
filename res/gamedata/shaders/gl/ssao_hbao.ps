@@ -360,10 +360,10 @@ float4 calc_hbao(float z, float3 N, float2 tc0, float4 pos2d)
     }
 
     float4 tangentPlane = float4(N, dot(P, N));
-    float3 Pr = tangent_eye_pos(tc0 + float2(g_InvResolution.x, 0), tangentPlane);
-    float3 Pl = tangent_eye_pos(tc0 + float2(-g_InvResolution.x, 0), tangentPlane);
-    float3 Pt = tangent_eye_pos(tc0 + float2(0, g_InvResolution.y), tangentPlane);
-    float3 Pb = tangent_eye_pos(tc0 + float2(0, -g_InvResolution.y), tangentPlane);
+    float3 Pr = tangent_eye_pos(tc0 + float2(g_InvResolution.x, 0.0), tangentPlane);
+    float3 Pl = tangent_eye_pos(tc0 + float2(-g_InvResolution.x, 0.0), tangentPlane);
+    float3 Pt = tangent_eye_pos(tc0 + float2(0.0, g_InvResolution.y), tangentPlane);
+    float3 Pb = tangent_eye_pos(tc0 + float2(0.0, -g_InvResolution.y), tangentPlane);
 
     float3 dPdu = min_diff(P, Pr, Pl);
     float3 dPdv = min_diff(P, Pt, Pb) * (g_Resolution.y * g_InvResolution.x);

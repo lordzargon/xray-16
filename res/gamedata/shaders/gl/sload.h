@@ -5,14 +5,14 @@
 
 #ifdef	MSAA_ALPHATEST_DX10_1
 #if MSAA_SAMPLES == 2
-const float2 MSAAOffsets[2] = { float2(4,4), float2(-4,-4) };
+const float2 MSAAOffsets[2] = { float2(4.0, 4.0), float2(-4.0, -4.0) };
 #endif
 #if MSAA_SAMPLES == 4
-const float2 MSAAOffsets[4] = { float2(-2,-6), float2(6,-2), float2(-6,2), float2(2,6) };
+const float2 MSAAOffsets[4] = { float2(-2.0, -6.0), float2(6.0, -2.0), float2(-6.0, 2.0), float2(2.0, 6.0) };
 #endif
 #if MSAA_SAMPLES == 8
-const float2 MSAAOffsets[8] = { float2(1,-3), float2(-1,3), float2(5,1), float2(-3,-5), 
-								               float2(-5,5), float2(-7,-1), float2(3,7), float2(7,-7) };
+const float2 MSAAOffsets[8] = { float2(1.0, -3.0), float2(-1.0, 3.0), float2(5.0, 1.0), float2(-3.0, -5.0), 
+								               float2(-5.0, 5.0), float2(-7.0, -1.0), float2(3.0, 7.0), float2(7.0, -7.0) };
 #endif
 #endif	//	MSAA_ALPHATEST_DX10_1
 
@@ -42,8 +42,8 @@ void UpdateTC( inout p_bumped I )
 {
 	if (I.position.z < fParallaxStopFade)
 	{
-		const float maxSamples = 25;
-		const float minSamples = 5;
+		const float maxSamples = 25.0;
+		const float minSamples = 5.0;
 		const float fParallaxOffset = -0.013;
 
 		float3	 eye = mul (float3x3(I.M1.x, I.M2.x, I.M3.x,
@@ -64,7 +64,7 @@ void UpdateTC( inout p_bumped I )
 		float	fCurrHeight			= 0.0;
 		float	fCurrentBound		= 1.0;
 
-		for( int i=0; i<nNumSteps; ++i )
+		for( int i=0; i<int(nNumSteps); ++i )
 		{
 			if (fCurrHeight < fCurrentBound)
 			{	
@@ -155,7 +155,7 @@ surface_bumped sload_i( p_bumped I)
 	S.normal			+= NDetail.wzy + NDetailX.xyz - 1.0; //	(Nu.wzyx - 0.5) + (E-0.5)
 
 	float4 detail		= tex2D( s_detail, I.tcdbump);
-	S.base.rgb			= S.base.rgb * detail.rgb * 2;
+	S.base.rgb			= S.base.rgb * detail.rgb * 2.0;
 
 //	S.base.rgb			= float3(1,0,0);
 #else        //	USE_TDETAIL_BUMP
@@ -203,7 +203,7 @@ surface_bumped sload_i( p_bumped I, float2 pixeloffset )
 	S.normal			+= NDetail.wzy + NDetailX.xyz - 1.0; //	(Nu.wzyx - 0.5) + (E-0.5)
 
 	float4 detail		= tex2D( s_detail, I.tcdbump);
-	S.base.rgb			= S.base.rgb * detail.rgb * 2;
+	S.base.rgb			= S.base.rgb * detail.rgb * 2.0;
 
 //	S.base.rgb			= float3(1,0,0);
 #else        //	USE_TDETAIL_BUMP

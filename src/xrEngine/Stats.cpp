@@ -151,10 +151,21 @@ void CStats::Show()
 #endif
     font.OnRender();
 
-    if (psDeviceFlags.test(rsShowFPS))
+#if defined(__ANDROID__)
+    const bool showFPS = true;
+#else
+    const bool showFPS = psDeviceFlags.test(rsShowFPS);
+#endif
+    if (showFPS)
     {
         const auto fps = u32(Device.GetStats().fFPS);
-        fpsFont->Out(static_cast<float>(Device.dwWidth - 40), 5, "%3d", fps);
+        const float frameTime = Device.fTimeDeltaReal * 1000.0f;
+        fpsFont->SetColor(color_rgba(255, 255, 0, 255));
+#if defined(__ANDROID__)
+        fpsFont->Out(260.0f, 70.0f, "%3d FPS (%.1f ms)", fps, frameTime);
+#else
+        fpsFont->Out(static_cast<float>(Device.dwWidth - 240), 5, "%3d FPS (%.1f ms)", fps, frameTime);
+#endif
         fpsFont->OnRender();
     }
     if (psDeviceFlags.test(rsShowFPSGraph))

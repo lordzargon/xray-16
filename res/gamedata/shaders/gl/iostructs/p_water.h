@@ -1,5 +1,5 @@
 
-layout(location = 0) layout(location = 0) out vec4 SV_Target;
+layout(location = 0) out vec4 SV_Target;
 #ifdef GBUFFER_OPTIMIZATION
 in vec4 gl_FragCoord;
 #endif

@@ -1,5 +1,5 @@
 
-layout(location = 0) layout(location = 0) out vec4 SV_Target;
+layout(location = 0) out vec4 SV_Target;
 
 layout(location = TEXCOORD1)	in float2	p_shadow_tc0	; // TEXCOORD1;	// Diffuse map for aref
 
