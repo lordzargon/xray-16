@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bitset>
+#include <array>
 
 #include <SDL.h>
 
@@ -177,6 +178,55 @@ public:
         void FrameEnd() { FrameTime.FrameEnd(); }
     };
 
+    // ---- Touch input state ----
+    // Action button indices for the touch overlay
+    enum ETouchButton : int
+    {
+        TB_FIRE = 0,
+        TB_AIM,
+        TB_JUMP,
+        TB_CROUCH,
+        TB_USE,
+        TB_RELOAD,
+        TB_INV,
+        TB_PDA,
+        TB_MENU,
+        TB_QUICK1,
+        TB_QUICK2,
+        TB_QUICK3,
+        TB_QUICK4,
+        TB_COUNT
+    };
+
+    struct CTouchState
+    {
+        // Virtual stick (left zone)
+        SDL_FingerID  stickFingerId{ 0 };
+        bool          stickFingerActive{ false };
+        Fvector2      stickOrigin{};     // absolute pixel position where finger first touched
+        Fvector2      stickCurrent{};    // current finger pixel position
+        Fvector2      stickDelta{};      // normalized deflection [-1..1]
+        float         stickMagnitude{ 0.f };
+
+        // Look swipe (right zone)
+        SDL_FingerID  lookFingerId{ 0 };
+        bool          lookFingerActive{ false };
+        Fvector2      lookPrev{};        // previous look finger position (pixels)
+
+        // Action buttons – normalized screen-space rects [0..1]
+        std::array<SDL_FRect, TB_COUNT> buttonRects{};
+        std::array<bool, TB_COUNT>      buttonDown{};
+        std::array<SDL_FingerID, TB_COUNT> buttonFinger{};
+
+        void Reset()
+        {
+            stickFingerActive = lookFingerActive = false;
+            stickMagnitude = 0.f;
+            stickDelta = {};
+            buttonDown.fill(false);
+        }
+    };
+
 private:
     InputStatistics stats;
 
@@ -189,13 +239,18 @@ private:
 
     xr_vector<SDL_GameController*> controllers;
 
+    // Touch state – only meaningful on Android / touch-enabled platforms
+    CTouchState touchState;
+
     void SetCurrentInputType(InputType type);
 
     void MouseUpdate();
     void KeyUpdate();
     void ControllerUpdate();
+    void TouchUpdate();            // NEW: processes SDL finger events each frame
 
     void OpenController(int idx);
+    void LoadGameControllerDatabase(); // NEW: loads community gamecontrollerdb.txt at startup
 
     MessageRegistry<pureKeyMapChanged> seqKeyMapChanged;
 
@@ -218,6 +273,7 @@ public:
 
     bool iGetAsyncKeyState(const int key);
     const auto& iGetAsyncControllerState() const { return controllerState; }
+    const CTouchState& iGetTouchState() const { return touchState; }
     bool iAnyMouseButtonDown() const { return mouseState.any(); }
     bool iAnyKeyButtonDown() const { return keyboardState.any(); }
     bool iAnyControllerButtonDown() const { return controllerState.buttons.any(); }
@@ -272,3 +328,8 @@ public:
 };
 
 extern ENGINE_API CInput* pInput;
+
+// Touch control console variables (Android / touch platforms)
+extern ENGINE_API int   psTouchEnable;   // 0 = off, 1 = on
+extern ENGINE_API float psTouchOpacity;  // 0.1 .. 1.0
+extern ENGINE_API float psTouchSens;     // 0.1 .. 3.0

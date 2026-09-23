@@ -170,6 +170,8 @@ target_sources_grouped(
     FILES
     CustomHUD.cpp
     CustomHUD.h
+    TouchOverlay.cpp
+    TouchOverlay.h
 )
 
 target_sources_grouped(

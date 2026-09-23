@@ -17,6 +17,7 @@
 #include "IGame_Persistent.h"
 #include "LightAnimLibrary.h"
 #include "XR_IOConsole.h"
+#include "TouchOverlay.h"
 
 #if defined(XR_PLATFORM_WINDOWS)
 #include "AccessibilityShortcuts.hpp"
@@ -296,6 +297,9 @@ CApplication::CApplication(pcstr commandLine, GameModule* game, const std::array
     Device.Create();
     TaskScheduler->Wait(createLightAnim);
 
+    // Create the touch HUD overlay (registers itself to Device.seqRender)
+    pTouchOverlay = xr_new<CTouchOverlay>();
+
     if (game)
     {
         m_game_module = game;
@@ -322,6 +326,8 @@ CApplication::~CApplication()
 
     Engine.Event.Dump();
 
+    // Destroy touch overlay before input, since it reads pInput during OnRender
+    xr_delete(pTouchOverlay);
     xr_delete(pInput);
     destroySettings();
 

@@ -1,0 +1,47 @@
+﻿# OpenXRay Android - Bundled SDL2 Game Controller Mappings
+# Generated from community database (gabomdq/SDL_GameControllerDB)
+# Platform: Android Bluetooth gamepads
+#
+# Format:
+#   GUID,name,platform mappings...,platform:Android
+#
+# To update this file with a full community database, replace the contents
+# with the latest gamecontrollerdb.txt from:
+#   https://raw.githubusercontent.com/gabomdq/SDL_GameControllerDB/master/gamecontrollerdb.txt
+# and filter lines ending with "platform:Android"
+
+# Xbox Wireless Controller (Bluetooth, Android)
+050000005e040000e002000003090000,Xbox Wireless Controller,a:b0,b:b1,x:b3,y:b4,back:b10,start:b11,leftstick:b13,rightstick:b14,leftshoulder:b6,rightshoulder:b7,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a1,lefty:a0,rightx:a3,righty:a2,lefttrigger:a5,righttrigger:a4,platform:Android,
+
+# Xbox Wireless Controller (Bluetooth, modern firmware)
+050000005e040000fd020000ff070000,Xbox Wireless Controller,a:b0,b:b1,x:b3,y:b4,back:b10,start:b11,leftstick:b13,rightstick:b14,leftshoulder:b6,rightshoulder:b7,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a1,lefty:a0,rightx:a3,righty:a2,lefttrigger:a5,righttrigger:a4,platform:Android,
+
+# Xbox Series X/S Wireless Controller
+050000005e040000130b000005050000,Xbox Series X Controller,a:b0,b:b1,x:b3,y:b4,back:b10,start:b11,leftstick:b13,rightstick:b14,leftshoulder:b6,rightshoulder:b7,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a1,lefty:a0,rightx:a3,righty:a2,lefttrigger:a5,righttrigger:a4,platform:Android,
+
+# Sony DualShock 4 (Bluetooth)
+050000004c050000cc09000000810000,PS4 Controller,a:b1,b:b17,x:b0,y:b3,back:b15,guide:b5,start:b6,leftstick:b4,rightstick:b7,leftshoulder:b3,rightshoulder:b18,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a4,righttrigger:a5,platform:Android,
+
+# Sony DualShock 4 v2 (Bluetooth)
+050000004c050000c4050000ffff3f00,PS4 Controller,a:b1,b:b17,x:b0,y:b3,back:b15,guide:b5,start:b6,leftstick:b4,rightstick:b7,leftshoulder:b3,rightshoulder:b18,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a4,righttrigger:a5,platform:Android,
+
+# Sony DualSense (PS5, Bluetooth)
+050000004c050000e60c000000810000,PS5 Controller,a:b1,b:b17,x:b0,y:b3,back:b15,guide:b5,start:b6,leftstick:b4,rightstick:b7,leftshoulder:b3,rightshoulder:b18,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a4,righttrigger:a5,platform:Android,
+
+# Nintendo Switch Pro Controller (Bluetooth)
+050000007e0500000920000001000000,Nintendo Switch Pro Controller,a:b0,b:b1,x:b3,y:b2,back:b8,guide:b12,start:b9,leftstick:b10,rightstick:b11,leftshoulder:b4,rightshoulder:b5,dpup:b13,dpdown:b15,dpleft:b16,dpright:b14,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b6,righttrigger:b7,platform:Android,
+
+# 8BitDo SN30 Pro Bluetooth
+05000000c82d000021890000ffff3f00,8BitDo SN30 Pro,a:b1,b:b0,x:b4,y:b3,back:b10,start:b11,leftstick:b13,rightstick:b14,leftshoulder:b6,rightshoulder:b7,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a5,righttrigger:a4,platform:Android,
+
+# 8BitDo Pro 2 Bluetooth
+05000000c82d000012900000ffff3f00,8BitDo Pro 2,a:b1,b:b0,x:b4,y:b3,back:b10,start:b11,leftstick:b13,rightstick:b14,leftshoulder:b6,rightshoulder:b7,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a5,righttrigger:a4,platform:Android,
+
+# Razer Kishi v1 (Android)
+050000007202000019200000ffff0000,Razer Kishi V1 for Android,a:b0,b:b1,x:b3,y:b4,back:b10,start:b11,leftstick:b13,rightstick:b14,leftshoulder:b6,rightshoulder:b7,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a5,righttrigger:a4,platform:Android,
+
+# GameSir G7 SE Bluetooth
+0500000047532020473720202020200,GameSir G7,a:b0,b:b1,x:b3,y:b4,back:b10,start:b11,leftstick:b13,rightstick:b14,leftshoulder:b6,rightshoulder:b7,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a5,righttrigger:a4,platform:Android,
+
+# Generic Bluetooth HID Gamepad (fallback)
+05000000050b00000045000090000000,Bluetooth Gamepad,a:b0,b:b1,x:b3,y:b4,back:b10,start:b11,leftshoulder:b6,rightshoulder:b7,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a5,righttrigger:a4,platform:Android,

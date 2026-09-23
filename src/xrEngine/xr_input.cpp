@@ -6,6 +6,7 @@
 #include "GameFont.h"
 #include "XR_IOConsole.h"
 #include "xrCore/Text/StringConversion.hpp"
+#include "IGame_Level.h"
 
 #include <locale>
 
@@ -52,12 +53,18 @@ ENGINE_API Flags32 psControllerFlags = { ControllerEnableSensors };
 
 ENGINE_API float psControllerCursorAutohideTime = 1.5f;
 
+// Touch control variables (Android / touch-enabled platforms)
+ENGINE_API int   psTouchEnable  = 1;    // enabled by default on Android
+ENGINE_API float psTouchOpacity = 0.65f;
+ENGINE_API float psTouchSens    = 1.0f;
+
 static bool AltF4Pressed = false;
 
 // Max events per frame
-constexpr size_t MAX_KEYBOARD_EVENTS = 64;
-constexpr size_t MAX_MOUSE_EVENTS = 256;
+constexpr size_t MAX_KEYBOARD_EVENTS  = 64;
+constexpr size_t MAX_MOUSE_EVENTS     = 256;
 constexpr size_t MAX_CONTROLLER_EVENTS = 256;
+constexpr size_t MAX_TOUCH_EVENTS     = 64;
 
 CInput::CInput(const bool exclusive)
 {
@@ -94,6 +101,9 @@ CInput::CInput(const bool exclusive)
 
     for (int i = 0; i < SDL_NumJoysticks(); ++i)
         OpenController(i);
+
+    // Load community controller database so Bluetooth gamepads are recognised correctly
+    LoadGameControllerDatabase();
 }
 
 CInput::~CInput()
@@ -133,6 +143,35 @@ void CInput::OpenController(int idx)
 }
 
 //-----------------------------------------------------------------------
+// Load community gamecontrollerdb mappings from the app's assets or filesystem.
+// Covers Xbox Bluetooth, PS4/PS5 DualShock/DualSense, Switch Pro, and
+// generic Android Bluetooth HID gamepads.
+void CInput::LoadGameControllerDatabase()
+{
+    // Try the assets path first (Android APK bundle)
+    pcstr paths[] =
+    {
+        "gamecontrollerdb.txt",
+        "assets/gamecontrollerdb.txt",
+    };
+
+    for (pcstr path : paths)
+    {
+        SDL_RWops* rw = SDL_RWFromFile(path, "rb");
+        if (!rw)
+            continue;
+
+        const int added = SDL_GameControllerAddMappingsFromRW(rw, SDL_TRUE);
+        if (added >= 0)
+            Msg("~Input: Loaded %d controller mappings from %s", added, path);
+        else
+            Msg("!Input: Failed to parse controller mappings from %s: %s", path, SDL_GetError());
+        return;
+    }
+
+    Msg("~Input: gamecontrollerdb.txt not found – using SDL built-in mappings only");
+}
+
 
 void CInput::DumpStatistics(IGameFont& font, IPerformanceAlert* alert)
 {
@@ -187,7 +226,6 @@ void CInput::MouseUpdate()
     mouseAxisState[3] = 0;
 
     SDL_Event events[MAX_MOUSE_EVENTS];
-    SDL_PumpEvents();
     const auto count = SDL_PeepEvents(events, MAX_MOUSE_EVENTS,
         SDL_GETEVENT, SDL_MOUSEMOTION, SDL_MOUSEWHEEL);
 
@@ -198,6 +236,8 @@ void CInput::MouseUpdate()
         switch (event.type)
         {
         case SDL_MOUSEMOTION:
+            if (psTouchEnable && g_pGameLevel && g_pGameLevel->bReady && event.motion.which == SDL_TOUCH_MOUSEID)
+                break;
             mouseMoved = true;
             offs[0] += event.motion.xrel;
             offs[1] += event.motion.yrel;
@@ -207,6 +247,8 @@ void CInput::MouseUpdate()
 
         case SDL_MOUSEBUTTONDOWN:
         {
+            if (psTouchEnable && g_pGameLevel && g_pGameLevel->bReady && event.button.which == SDL_TOUCH_MOUSEID)
+                break;
             if (event.button.button >= 1 && event.button.button <= (Uint8)COUNT_MOUSE_BUTTONS)
             {
                 const auto idx = RemapIdx[event.button.button - 1];
@@ -218,6 +260,8 @@ void CInput::MouseUpdate()
         }
         case SDL_MOUSEBUTTONUP:
         {
+            if (psTouchEnable && g_pGameLevel && g_pGameLevel->bReady && event.button.which == SDL_TOUCH_MOUSEID)
+                break;
             if (event.button.button >= 1 && event.button.button <= (Uint8)COUNT_MOUSE_BUTTONS)
             {
                 const auto idx = RemapIdx[event.button.button - 1];
@@ -416,7 +460,6 @@ void CInput::ControllerUpdate()
     else if (currentInputType != Controller)
         return;
 
-    SDL_PumpEvents();
     count = SDL_PeepEvents(events, MAX_CONTROLLER_EVENTS,
         SDL_GETEVENT, SDL_CONTROLLERAXISMOTION, SDL_CONTROLLERSENSORUPDATE);
 
@@ -785,11 +828,16 @@ void CInput::OnFrame(void)
     stats.FrameStart();
     stats.FrameTime.Begin();
 
+    // Pump *all* SDL events once at the start of the frame so that every
+    // subsequent PeepEvents call works off a fresh, complete snapshot.
+    SDL_PumpEvents();
+
     if (Device.dwPrecacheFrame == 0 && !Device.IsAnselActive)
     {
         ControllerUpdate();
         KeyUpdate();
         MouseUpdate();
+        TouchUpdate();
     }
 
     stats.FrameTime.End();
@@ -847,5 +895,300 @@ void CInput::Feedback(FeedbackType type, float s1, float s2, float duration)
     }
 
     default: NODEFAULT;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// TouchUpdate — process SDL finger events and synthesise game input
+// ---------------------------------------------------------------------------
+// Layout (all coords normalised 0..1 by SDL):
+//   Left  40%  width  → virtual analogue stick zone
+//   Right 60%  width  → look-swipe zone  (and action button zone)
+//
+// Action buttons (normalised positions, anchored to the right half):
+//   FIRE  0.78, 0.70  r=0.07
+//   AIM   0.88, 0.55  r=0.055
+//   JUMP  0.93, 0.70  r=0.055
+//   CROUCH 0.93, 0.85 r=0.05
+//   USE   0.78, 0.85  r=0.05
+//   RELOAD 0.88, 0.85 r=0.05
+//   INV   0.05, 0.06  r=0.045
+//   PDA   0.13, 0.06  r=0.045
+//   MENU  0.21, 0.06  r=0.045
+//   QUICK1-4  0.05..0.20, 0.15 r=0.04 each
+// ---------------------------------------------------------------------------
+
+// Key/button codes used for virtual button presses.
+// These correspond to the input keys recognized by GetBindedAction().
+#include "xr_level_controller.h"
+
+static constexpr int TouchButtonKey[CInput::TB_COUNT] =
+{
+    MOUSE_1,             // TB_FIRE   -> kWPN_FIRE
+    MOUSE_2,             // TB_AIM    -> kWPN_ZOOM
+    SDL_SCANCODE_SPACE,  // TB_JUMP   -> kJUMP
+    SDL_SCANCODE_LCTRL,  // TB_CROUCH -> kCROUCH
+    SDL_SCANCODE_F,      // TB_USE    -> kUSE
+    SDL_SCANCODE_R,      // TB_RELOAD -> kWPN_RELOAD
+    SDL_SCANCODE_I,      // TB_INV    -> kINVENTORY
+    SDL_SCANCODE_P,      // TB_PDA    -> kACTIVE_JOBS
+    SDL_SCANCODE_ESCAPE, // TB_MENU   -> kQUIT
+    SDL_SCANCODE_F1,     // TB_QUICK1 -> kQUICK_USE_1
+    SDL_SCANCODE_F2,     // TB_QUICK2 -> kQUICK_USE_2
+    SDL_SCANCODE_F3,     // TB_QUICK3 -> kQUICK_USE_3
+    SDL_SCANCODE_F4,     // TB_QUICK4 -> kQUICK_USE_4
+};
+
+// Rebuild the button layout rects every frame (cheap; avoids resolution-change issues)
+static void RebuildTouchButtonLayout(CInput::CTouchState& ts)
+{
+    const float W = static_cast<float>(Device.dwWidth);
+    const float H = static_cast<float>(Device.dwHeight);
+
+    // Helper: circle defined by center in pixels (cx_px, cy_px) and pixel radius r_px
+    auto makeBtn = [W, H](float cx_px, float cy_px, float r_px) -> SDL_FRect {
+        const float rw = r_px / W;
+        const float rh = r_px / H;
+        const float cx = cx_px / W;
+        const float cy = cy_px / H;
+        return { cx - rw, cy - rh, rw * 2.f, rh * 2.f };
+    };
+
+    // Right-side thumb cluster
+    ts.buttonRects[CInput::TB_FIRE]   = makeBtn(W - H * 0.34f, H * 0.62f, H * 0.095f);
+    ts.buttonRects[CInput::TB_AIM]    = makeBtn(W - H * 0.16f, H * 0.40f, H * 0.080f);
+    ts.buttonRects[CInput::TB_JUMP]   = makeBtn(W - H * 0.13f, H * 0.62f, H * 0.075f);
+    ts.buttonRects[CInput::TB_RELOAD] = makeBtn(W - H * 0.24f, H * 0.78f, H * 0.070f);
+    ts.buttonRects[CInput::TB_USE]    = makeBtn(W - H * 0.36f, H * 0.84f, H * 0.070f);
+    ts.buttonRects[CInput::TB_CROUCH] = makeBtn(W - H * 0.13f, H * 0.84f, H * 0.070f);
+
+    // Top-center utility buttons (safe from camera notch and minimap)
+    ts.buttonRects[CInput::TB_INV]    = makeBtn(W * 0.5f - H * 0.22f, H * 0.07f, H * 0.045f);
+    ts.buttonRects[CInput::TB_PDA]    = makeBtn(W * 0.5f - H * 0.08f, H * 0.07f, H * 0.045f);
+    ts.buttonRects[CInput::TB_MENU]   = makeBtn(W * 0.5f + H * 0.08f, H * 0.07f, H * 0.045f);
+
+    // Quick slots
+    ts.buttonRects[CInput::TB_QUICK1] = makeBtn(W * 0.5f + H * 0.22f, H * 0.07f, H * 0.040f);
+    ts.buttonRects[CInput::TB_QUICK2] = makeBtn(W * 0.5f + H * 0.31f, H * 0.07f, H * 0.040f);
+    ts.buttonRects[CInput::TB_QUICK3] = makeBtn(W * 0.5f + H * 0.40f, H * 0.07f, H * 0.040f);
+    ts.buttonRects[CInput::TB_QUICK4] = makeBtn(W * 0.5f + H * 0.49f, H * 0.07f, H * 0.040f);
+}
+
+static bool PointInButton(float nx, float ny, const SDL_FRect& r, float W, float H)
+{
+    const float bcx = (r.x + r.w * 0.5f) * W;
+    const float bcy = (r.y + r.h * 0.5f) * H;
+    const float br  = r.w * 0.5f * W;
+    const float dx  = nx * W - bcx;
+    const float dy  = ny * H - bcy;
+    return (dx * dx + dy * dy) <= (br * br);
+}
+
+void CInput::TouchUpdate()
+{
+    ZoneScoped;
+
+    if (!psTouchEnable)
+        return;
+
+    if (cbStack.empty())
+        return;
+
+    // In menus or loading screens, touch is handled naturally by SDL's touch-to-mouse translation
+    if (!g_pGameLevel || !g_pGameLevel->bReady)
+    {
+        touchState.Reset();
+        return;
+    }
+
+    IInputReceiver* ir = cbStack.back();
+
+    RebuildTouchButtonLayout(touchState);
+
+    SDL_Event events[MAX_TOUCH_EVENTS];
+    const auto count = SDL_PeepEvents(events, (int)MAX_TOUCH_EVENTS,
+        SDL_GETEVENT, SDL_FINGERDOWN, SDL_FINGERUP);
+
+    if (count > 0)
+        SetCurrentInputType(KeyboardMouse);
+
+    const float W = static_cast<float>(Device.dwWidth);
+    const float H = static_cast<float>(Device.dwHeight);
+    const float stickMaxRadius = H * 0.17f * psTouchSens;
+    constexpr float STICK_LEFT_ZONE = 0.40f;
+
+    auto updateStickDeflection = [&](float px, float py)
+    {
+        touchState.stickCurrent.set(px, py);
+        Fvector2 delta;
+        delta.sub(touchState.stickCurrent, touchState.stickOrigin);
+
+        float magnitude = delta.magnitude();
+        if (magnitude > stickMaxRadius)
+        {
+            delta.div(magnitude);
+            delta.mul(stickMaxRadius);
+            magnitude = stickMaxRadius;
+        }
+
+        const float normMag = (stickMaxRadius > 0.f) ? (magnitude / stickMaxRadius) : 0.f;
+        Fvector2 normDelta = delta;
+        if (magnitude > 0.f)
+            normDelta.div(magnitude);
+        normDelta.mul(normMag);
+
+        touchState.stickDelta = normDelta;
+        touchState.stickMagnitude = normMag;
+    };
+
+    for (int i = 0; i < count; ++i)
+    {
+        const SDL_TouchFingerEvent& tf = events[i].tfinger;
+        const float nx = tf.x;
+        const float ny = tf.y;
+        const float px = nx * W;
+        const float py = ny * H;
+
+        if (tf.type == SDL_FINGERDOWN)
+        {
+            // 1. Check if landing on any action button
+            bool onButton = false;
+            for (int b = 0; b < TB_COUNT; ++b)
+            {
+                if (!touchState.buttonDown[b] && PointInButton(nx, ny, touchState.buttonRects[b], W, H))
+                {
+                    touchState.buttonDown[b]   = true;
+                    touchState.buttonFinger[b] = tf.fingerId;
+                    onButton = true;
+
+                    const int key = TouchButtonKey[b];
+                    if (key == MOUSE_1)
+                        mouseState[0] = true;
+                    else if (key == MOUSE_2)
+                        mouseState[1] = true;
+                    else if (key < COUNT_KB_BUTTONS)
+                        keyboardState[key] = true;
+
+                    ir->IR_OnKeyboardPress(key);
+                    break;
+                }
+            }
+
+            if (onButton)
+                continue;
+
+            // 2. Left zone: virtual movement stick
+            if (nx < STICK_LEFT_ZONE && !touchState.stickFingerActive)
+            {
+                touchState.stickFingerActive = true;
+                touchState.stickFingerId     = tf.fingerId;
+                touchState.stickOrigin.set(px, py);
+                touchState.stickCurrent.set(px, py);
+                touchState.stickDelta = {};
+                touchState.stickMagnitude = 0.f;
+                continue;
+            }
+
+            // 3. Right zone (or remaining area): look swipe
+            if (nx >= STICK_LEFT_ZONE && !touchState.lookFingerActive)
+            {
+                touchState.lookFingerActive = true;
+                touchState.lookFingerId     = tf.fingerId;
+                touchState.lookPrev.set(px, py);
+            }
+        }
+        else if (tf.type == SDL_FINGERUP)
+        {
+            // Release action buttons
+            for (int b = 0; b < TB_COUNT; ++b)
+            {
+                if (touchState.buttonDown[b] && touchState.buttonFinger[b] == tf.fingerId)
+                {
+                    touchState.buttonDown[b] = false;
+
+                    const int key = TouchButtonKey[b];
+                    if (key == MOUSE_1)
+                        mouseState[0] = false;
+                    else if (key == MOUSE_2)
+                        mouseState[1] = false;
+                    else if (key < COUNT_KB_BUTTONS)
+                        keyboardState[key] = false;
+
+                    ir->IR_OnKeyboardRelease(key);
+                }
+            }
+
+            // Release stick
+            if (touchState.stickFingerActive && tf.fingerId == touchState.stickFingerId)
+            {
+                touchState.stickFingerActive = false;
+                touchState.stickMagnitude    = 0.f;
+                touchState.stickDelta        = {};
+                keyboardState[SDL_SCANCODE_LSHIFT] = false;
+                ir->IR_OnControllerRelease(XR_CONTROLLER_AXIS_LEFT, ControllerAxisState{});
+                ir->IR_OnKeyboardRelease(SDL_SCANCODE_LSHIFT);
+            }
+
+            // Release look swipe
+            if (touchState.lookFingerActive && tf.fingerId == touchState.lookFingerId)
+            {
+                touchState.lookFingerActive = false;
+            }
+        }
+    }
+
+    // Process FINGERMOTION events
+    const auto motionCount = SDL_PeepEvents(events, (int)MAX_TOUCH_EVENTS,
+        SDL_GETEVENT, SDL_FINGERMOTION, SDL_FINGERMOTION);
+
+    for (int i = 0; i < motionCount; ++i)
+    {
+        const SDL_TouchFingerEvent& tf = events[i].tfinger;
+        const float nx = tf.x;
+        const float ny = tf.y;
+        const float px = nx * W;
+        const float py = ny * H;
+
+        // Stick motion
+        if (touchState.stickFingerActive && tf.fingerId == touchState.stickFingerId)
+        {
+            updateStickDeflection(px, py);
+        }
+
+        // Look swipe motion
+        if (touchState.lookFingerActive && tf.fingerId == touchState.lookFingerId)
+        {
+            const float dpx = (px - touchState.lookPrev.x) * psTouchSens;
+            const float dpy = (py - touchState.lookPrev.y) * psTouchSens;
+            touchState.lookPrev.set(px, py);
+
+            if (!fis_zero(dpx) || !fis_zero(dpy))
+                ir->IR_OnMouseMove(static_cast<int>(dpx), static_cast<int>(dpy));
+        }
+    }
+
+    // Continuous hold: emit virtual stick hold event every frame while stick is deflected
+    if (touchState.stickFingerActive && !fis_zero(touchState.stickMagnitude))
+    {
+        ControllerAxisState axisState{ touchState.stickDelta, touchState.stickMagnitude };
+        ir->IR_OnControllerHold(XR_CONTROLLER_AXIS_LEFT, axisState);
+
+        // Auto-sprint: push stick forward >= 95% to trigger sprint (Shift)
+        if (touchState.stickMagnitude >= 0.95f && touchState.stickDelta.y < -0.5f)
+        {
+            keyboardState[SDL_SCANCODE_LSHIFT] = true;
+            ir->IR_OnKeyboardHold(SDL_SCANCODE_LSHIFT);
+        }
+        else
+        {
+            keyboardState[SDL_SCANCODE_LSHIFT] = false;
+        }
+    }
+
+    // Continuous hold: emit hold events for all currently pressed action buttons
+    for (int b = 0; b < TB_COUNT; ++b)
+    {
+        if (touchState.buttonDown[b])
+            ir->IR_OnKeyboardHold(TouchButtonKey[b]);
     }
 }

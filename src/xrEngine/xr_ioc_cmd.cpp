@@ -839,6 +839,11 @@ void CCC_Register()
     CMD3(CCC_Mask,  "gamepad_sensors_enable", &psControllerFlags, ControllerEnableSensors);
     CMD4(CCC_Float, "gamepad_cursor_autohide_time", &psControllerCursorAutohideTime, 0.5f, 3.f);
 
+    // Touch controls (Android / touch-enabled platforms)
+    CMD4(CCC_Integer, "touch_enable",  &psTouchEnable,  0,    1);
+    CMD4(CCC_Float,   "touch_opacity", &psTouchOpacity, 0.1f, 1.0f);
+    CMD4(CCC_Float,   "touch_sens",    &psTouchSens,    0.1f, 3.0f);
+
     // Camera
     CMD2(CCC_Float, "cam_inert", &psCamInert);
     CMD2(CCC_Float, "cam_slide_inert", &psCamSlideInert);
