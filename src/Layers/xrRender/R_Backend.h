@@ -100,6 +100,10 @@ private:
     GLuint pFB;
     GLuint pRT[4];
     GLuint pZB;
+#elif defined(USE_VK)
+    VkFramebuffer pFB{ VK_NULL_HANDLE };
+    VkImageView pRT[4]{ VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
+    VkImageView pZB{ VK_NULL_HANDLE };
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -128,6 +132,11 @@ private:
     GLuint vs;
     GLuint gs;
     GLuint pp;
+#elif defined(USE_VK)
+    VkShaderModule ps{ VK_NULL_HANDLE };
+    VkShaderModule vs{ VK_NULL_HANDLE };
+    VkShaderModule gs{ VK_NULL_HANDLE };
+    VkShaderModule cs{ VK_NULL_HANDLE };
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -281,6 +290,13 @@ public:
     IC GLuint get_FB();
     IC GLuint get_RT(u32 ID = 0);
     IC GLuint get_ZB();
+#elif defined(USE_VK)
+    IC void set_FB(VkFramebuffer FB = VK_NULL_HANDLE);
+    IC void set_RT(VkImageView RT, u32 ID = 0);
+    IC void set_ZB(VkImageView ZB);
+    IC VkFramebuffer get_FB();
+    IC VkImageView get_RT(u32 ID = 0);
+    IC VkImageView get_ZB();
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -301,22 +317,30 @@ public:
 
     IC bool ClearRTRect(GLuint rt, const Fcolor& color, size_t numRects, const Irect* rects);
     IC bool ClearZBRect(GLuint zb, float depth, size_t numRects, const Irect* rects);
+#elif defined(USE_VK)
+    IC void ClearRT(VkImageView rt, const Fcolor& color);
+
+    IC void ClearZB(VkImageView zb, float depth);
+    IC void ClearZB(VkImageView zb, float depth, u8 stencil);
+
+    IC bool ClearRTRect(VkImageView rt, const Fcolor& color, size_t numRects, const Irect* rects);
+    IC bool ClearZBRect(VkImageView zb, float depth, size_t numRects, const Irect* rects);
 #else
 #   error No graphics API selected or enabled!
 #endif
 
-    ICF void ClearRT(ref_rt& rt, const Fcolor& color) { ClearRT(rt->pRT, color); }
+    ICF void ClearRT(ref_rt& rt, const Fcolor& color) { if (rt) ClearRT(rt->pRT, color); }
     ICF bool ClearRTRect(ref_rt& rt, const Fcolor& color, size_t numRects, const Irect* rects)
     {
-        return ClearRTRect(rt->pRT, color, numRects, rects);
+        return rt ? ClearRTRect(rt->pRT, color, numRects, rects) : true;
     }
 
-#if defined(USE_OGL)
-    ICF void ClearZB(ref_rt& zb, float depth) { ClearZB(zb->pRT, depth);}
-    ICF void ClearZB(ref_rt& zb, float depth, u8 stencil) { ClearZB(zb->pRT, depth, stencil);}
+#if defined(USE_OGL) || defined(USE_VK)
+    ICF void ClearZB(ref_rt& zb, float depth) { if (zb) ClearZB(zb->pRT, depth);}
+    ICF void ClearZB(ref_rt& zb, float depth, u8 stencil) { if (zb) ClearZB(zb->pRT, depth, stencil);}
     ICF bool ClearZBRect(ref_rt& zb, float depth, size_t numRects, const Irect* rects)
     {
-        return ClearZBRect(zb->pRT, depth, numRects, rects);
+        return zb ? ClearZBRect(zb->pRT, depth, numRects, rects) : true;
     }
 #elif defined(USE_DX11)
     ICF void ClearZB(ref_rt& zb, float depth) { ClearZB(zb->pZRT[context_id], depth); }
@@ -357,6 +381,8 @@ private:
     ICF void set_PS(ID3DPixelShader* _ps, LPCSTR _n = nullptr);
 #elif defined(USE_OGL)
     ICF void set_PS(GLuint _ps, LPCSTR _n = 0);
+#elif defined(USE_VK)
+    ICF void set_PS(VkShaderModule _ps, LPCSTR _n = 0);
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -378,6 +404,8 @@ private:
 
     ICF void set_PP(GLuint _pp, pcstr _n = nullptr);
     ICF void set_PP(ref_pp& _pp) { set_PP(_pp->pp, _pp->cName.c_str()); }
+#   elif defined(USE_VK)
+    ICF void set_GS(VkShaderModule _gs, LPCSTR _n = 0);
 #   endif
 
     ICF void set_VS(ref_vs& _vs);
@@ -390,6 +418,8 @@ private:
     ICF void set_VS(ID3DVertexShader* _vs, LPCSTR _n = nullptr);
 #elif defined(USE_OGL)
     ICF void set_VS(GLuint _vs, LPCSTR _n = 0);
+#elif defined(USE_VK)
+    ICF void set_VS(VkShaderModule _vs, LPCSTR _n = 0);
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -399,10 +429,14 @@ public:
     ICF void set_CS(ID3D11ComputeShader* _cs, LPCSTR _n = nullptr);
     ICF void set_CS(ref_cs& _cs) { set_CS(_cs->sh, _cs->cName.c_str()); }
     ICF void Compute(u32 ThreadGroupCountX, u32 ThreadGroupCountY, u32 ThreadGroupCountZ);
+#elif defined(USE_VK)
+    ICF void set_CS(VkShaderModule _cs, LPCSTR _n = nullptr);
+    ICF void set_CS(ref_cs& _cs) { set_CS(_cs->sh, _cs->cName.c_str()); }
+    ICF void Compute(u32 ThreadGroupCountX, u32 ThreadGroupCountY, u32 ThreadGroupCountZ) {}
 #endif
 
 public:
-#if defined(USE_OGL)
+#if defined(USE_OGL) || defined(USE_VK)
     ICF bool is_TessEnabled() { return false; }
 #elif defined(USE_DX11)
     ICF bool is_TessEnabled();

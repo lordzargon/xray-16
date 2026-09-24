@@ -402,6 +402,15 @@ public:
     BackendAPI GetBackendAPI() const override { return IRender::BackendAPI::OpenGL; }
     u32 get_dx_level() override { return /*HW.pDevice1?0x000A0001:*/0x000A0000; }
     pcstr getShaderPath() override { return "gl\\"; }
+#elif defined(USE_VK)
+    BackendAPI GetBackendAPI() const override { return IRender::BackendAPI::Vulkan; }
+    u32 get_dx_level() override { return 0x000A0000; }
+    pcstr getShaderPath() override
+    {
+        if (FS.exist("$game_shaders$", "vk\\"))
+            return "vk\\";
+        return "gl\\";
+    }
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -425,6 +434,8 @@ public:
     ID3DBaseTexture* texture_load(pcstr fname, u32& msize);
 #elif defined(USE_OGL)
     GLuint           texture_load(pcstr fname, u32& msize, GLenum& ret_desc);
+#elif defined(USE_VK)
+    VkImage          texture_load(pcstr fname, u32& msize, VkImageView& ret_view, VkDeviceMemory& ret_mem);
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -514,7 +525,7 @@ public:
 private:
 #if defined(USE_DX11)
     xr_vector<D3D_SHADER_MACRO> m_ShaderOptions;
-#elif defined(USE_OGL)
+#elif defined(USE_OGL) || defined(USE_VK)
     xr_string m_ShaderOptions;
 #else
 #   error No graphics API selected or enabled!

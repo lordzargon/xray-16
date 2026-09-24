@@ -46,8 +46,8 @@ public:
         rstCompute = rstDomain + 256,
         rstInvalid = rstCompute + 256
     };
-#elif defined(USE_OGL)
-    //	Since OGL doesn't differentiate between stages,
+#elif defined(USE_OGL) || defined(USE_VK)
+    //	Since OGL/VK doesn't differentiate between stages in the same way,
     //	distance between enum values should be the max for that stage.
     enum ResourceShaderType
     {
@@ -80,6 +80,10 @@ public:
 #elif defined(USE_OGL)
     void surface_set(GLenum target, GLuint surf);
     [[nodiscard]] GLuint surface_get() const;
+#elif defined(USE_VK)
+    void surface_set(VkImage surf, VkImageView view = VK_NULL_HANDLE);
+    [[nodiscard]] VkImage surface_get() const;
+    [[nodiscard]] VkImageView view_get() const;
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -127,6 +131,13 @@ public:
         if (!flags.bLoaded)
             Load();
         return static_cast<ImTextureID>(pSurface);
+    }
+#elif defined(USE_VK)
+    ImTextureID GetImTextureID()
+    {
+        if (!flags.bLoaded)
+            Load();
+        return reinterpret_cast<ImTextureID>(m_view);
     }
 #else
 #   error No graphics API selected or enabled!
@@ -198,6 +209,19 @@ private:
     GLint m_height;
     GLuint desc_cache;
     GLenum desc;
+#elif defined(USE_VK)
+    VkImage pSurface{ VK_NULL_HANDLE };
+    VkImageView m_view{ VK_NULL_HANDLE };
+    VkDeviceMemory m_memory{ VK_NULL_HANDLE };
+    VkBuffer pBuffer{ VK_NULL_HANDLE };
+    // Sequence data
+    xr_vector<VkImage> seqDATA;
+    xr_vector<VkImageView> seqViews;
+    // Description
+    u32 m_width{ 0 };
+    u32 m_height{ 0 };
+    VkImage desc_cache{ VK_NULL_HANDLE };
+    VkFormat desc{ VK_FORMAT_UNDEFINED };
 #else
 #   error No graphics API selected or enabled!
 #endif

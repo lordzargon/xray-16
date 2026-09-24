@@ -21,13 +21,20 @@ XR_EXPORT u32 NvOptimusEnablement = 0x00000001; // NVIDIA Optimus
 XR_EXPORT u32 AmdPowerXpressRequestHighPerformance = 0x00000001; // PowerXpress or Hybrid Graphics
 }
 
-std::array<RendererModule*, 2> s_render_modules =
-{
 #ifdef XR_PLATFORM_WINDOWS
+std::array<RendererModule*, 3> s_render_modules =
+{
     xray::render::render_r4::GetRendererModule(),
-#endif
+    xray::render::render_vk::GetRendererModule(),
     xray::render::render_gl::GetRendererModule(),
 };
+#else
+std::array<RendererModule*, 2> s_render_modules =
+{
+    xray::render::render_vk::GetRendererModule(),
+    xray::render::render_gl::GetRendererModule(),
+};
+#endif
 
 struct tracy_raii
 {

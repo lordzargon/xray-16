@@ -41,7 +41,12 @@ private:
 
 public:
     // Other
-    CApplication(pcstr commandLine, GameModule* game, const std::array<RendererModule*, 2>& modules);
+    CApplication(pcstr commandLine, GameModule* game, RendererModule* const* modules, size_t count);
+
+    template <size_t N>
+    CApplication(pcstr commandLine, GameModule* game, const std::array<RendererModule*, N>& modules)
+        : CApplication(commandLine, game, modules.data(), modules.size()) {}
+
     ~CApplication();
 
     int Run();

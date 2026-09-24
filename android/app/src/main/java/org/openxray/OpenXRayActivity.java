@@ -150,7 +150,9 @@ public class OpenXRayActivity extends SDLActivity {
         return new String[] {
             "-fsltx",
             "/sdcard/Android/data/org.openxray/files/fsgame.ltx",
-            "-nogameintro"
+            "-nogameintro",
+            "-renderer",
+            "renderer_vk"
         };
     }
 
@@ -187,6 +189,7 @@ public class OpenXRayActivity extends SDLActivity {
             "xrParticles",
 
             // Renderer & Gameplay
+            "xrRender_VK",
             "xrRender_GL",
             "xrGame",
             "xrEngine",

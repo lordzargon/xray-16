@@ -33,6 +33,7 @@ target_link_libraries(xr_3da
     xrCore
     xrAPI
     xrEngine
+    xrRender_VK
     xrRender_GL
     xrGame
     $<$<BOOL:${ANDROID}>:SDL2::SDL2 log>

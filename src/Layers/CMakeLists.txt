@@ -5,3 +5,4 @@ if (WIN32)
 endif()
 
 add_subdirectory(xrRenderPC_GL)
+add_subdirectory(xrRenderPC_VK)

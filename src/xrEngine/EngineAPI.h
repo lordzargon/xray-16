@@ -81,7 +81,14 @@ public:
     ~CEngineAPI();
 
     // Call it in the main thread
-    void CreateRendererList(const std::array<RendererModule*, 2>& modules);
+    void CreateRendererList(RendererModule* const* modules, size_t count);
+
+    template <size_t N>
+    void CreateRendererList(const std::array<RendererModule*, N>& modules)
+    {
+        CreateRendererList(modules.data(), modules.size());
+    }
+
     void Initialize(GameModule* game);
     void Destroy();
 };

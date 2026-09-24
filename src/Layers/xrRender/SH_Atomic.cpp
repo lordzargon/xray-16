@@ -53,6 +53,12 @@ SVS::~SVS()
         CHK_GL(glDeleteProgram(sh));
     else
         CHK_GL(glDeleteShader(sh));
+#elif defined(USE_VK)
+    if (sh != VK_NULL_HANDLE)
+    {
+        vkDestroyShaderModule(HW.m_device, sh, nullptr);
+        sh = VK_NULL_HANDLE;
+    }
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -69,6 +75,12 @@ SPS::~SPS()
         CHK_GL(glDeleteProgram(sh));
     else
         CHK_GL(glDeleteShader(sh));
+#elif defined(USE_VK)
+    if (sh != VK_NULL_HANDLE)
+    {
+        vkDestroyShaderModule(HW.m_device, sh, nullptr);
+        sh = VK_NULL_HANDLE;
+    }
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -87,6 +99,12 @@ SGS::~SGS()
         CHK_GL(glDeleteProgram(sh));
     else
         CHK_GL(glDeleteShader(sh));
+#   elif defined(USE_VK)
+    if (sh != VK_NULL_HANDLE)
+    {
+        vkDestroyShaderModule(HW.m_device, sh, nullptr);
+        sh = VK_NULL_HANDLE;
+    }
 #   else
 #       error No graphics API selected or enabled!
 #   endif
@@ -103,6 +121,12 @@ SHS::~SHS()
         CHK_GL(glDeleteProgram(sh));
     else
         CHK_GL(glDeleteShader(sh));
+#   elif defined(USE_VK)
+    if (sh != VK_NULL_HANDLE)
+    {
+        vkDestroyShaderModule(HW.m_device, sh, nullptr);
+        sh = VK_NULL_HANDLE;
+    }
 #   else
 #       error No graphics API selected or enabled!
 #   endif
@@ -119,6 +143,12 @@ SDS::~SDS()
         CHK_GL(glDeleteProgram(sh));
     else
         CHK_GL(glDeleteShader(sh));
+#   elif defined(USE_VK)
+    if (sh != VK_NULL_HANDLE)
+    {
+        vkDestroyShaderModule(HW.m_device, sh, nullptr);
+        sh = VK_NULL_HANDLE;
+    }
 #   endif
 
     RImplementation.Resources->_DeleteDS(this);
@@ -133,6 +163,12 @@ SCS::~SCS()
         CHK_GL(glDeleteProgram(sh));
     else
         CHK_GL(glDeleteShader(sh));
+#   elif defined(USE_VK)
+    if (sh != VK_NULL_HANDLE)
+    {
+        vkDestroyShaderModule(HW.m_device, sh, nullptr);
+        sh = VK_NULL_HANDLE;
+    }
 #   else
 #       error No graphics API selected or enabled!
 #   endif
@@ -194,6 +230,8 @@ SDeclaration::~SDeclaration()
     }
 #elif defined(USE_OGL)
     glDeleteVertexArrays(1, &dcl);
+#elif defined(USE_VK)
+    // No explicit VAO in Vulkan
 #else
 #   error No graphics API selected or enabled!
 #endif

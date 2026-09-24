@@ -90,7 +90,30 @@ u32 CBlender_Compile::i_Sampler(LPCSTR _name) const
     // Find index
     ref_constant C = ctable.get(name, ctable.dx9compatibility ? RC_sampler : u16(-1));
     if (!C)
+    {
+#if defined(USE_VK)
+        auto& mutable_ctable = const_cast<R_constant_table&>(ctable);
+        C = xr_new<R_constant>();
+        C->name = name;
+        C->destination = RC_dest_sampler;
+        C->type = RC_sampler;
+        C->handler = nullptr;
+        R_constant_load& L = C->samp;
+        u32 stage = passTextures.size();
+        if (stage >= CTexture::mtMaxPixelShaderTextures)
+            stage = CTexture::mtMaxPixelShaderTextures - 1;
+        L.index = static_cast<u16>(stage);
+        L.cls = RC_sampler;
+        mutable_ctable.table.push_back(C);
+        std::sort(mutable_ctable.table.begin(), mutable_ctable.table.end(), [](const ref_constant& C1, const ref_constant& C2)
+        {
+            return xr_strcmp(C1->name.c_str(), C2->name.c_str()) < 0;
+        });
+        return L.index;
+#else
         return u32(-1);
+#endif
+    }
 
     R_ASSERT(C->type == RC_sampler);
     u32 stage = C->samp.index;
@@ -144,7 +167,7 @@ u32 CBlender_Compile::r_Sampler(
     {
 #if defined(USE_DX11)
         r_dx11Texture(_name, texture, true);
-#elif defined(USE_OGL)
+#elif defined(USE_OGL) || defined(USE_VK)
         i_Texture(dwStage, texture);
 #else
 #   error No graphics API selected or enabled!

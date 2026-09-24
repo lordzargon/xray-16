@@ -83,6 +83,10 @@ struct ECORE_API R_constant_load
     GLuint program;
 
     R_constant_load() : index(u16(-1)), cls(u16(-1)), location(0), program(0) {};
+#elif defined(USE_VK)
+    uint32_t location;
+
+    R_constant_load() : index(u16(-1)), cls(u16(-1)), location(0) {};
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -93,6 +97,8 @@ struct ECORE_API R_constant_load
         return (index == C.index) && (cls == C.cls);
 #elif defined(USE_OGL)
         return (index == C.index) && (cls == C.cls) && (location == C.location) && (program == C.program);
+#elif defined(USE_VK)
+        return (index == C.index) && (cls == C.cls) && (location == C.location);
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -114,6 +120,8 @@ struct ECORE_API R_constant : public xr_resource
     R_constant_load cs;
 #elif defined(USE_OGL)
     R_constant_load pp;
+#elif defined(USE_VK)
+    R_constant_load cs;
 #endif
 
     R_constant_load samp;
@@ -136,6 +144,8 @@ struct ECORE_API R_constant : public xr_resource
         case RC_dest_compute: return cs;
 #elif defined(USE_OGL)
         case RC_dest_all: return pp;
+#elif defined(USE_VK)
+        case RC_dest_compute: return cs;
 #endif
         default: FATAL("invalid enumeration for shader");
         }
@@ -156,6 +166,8 @@ struct ECORE_API R_constant : public xr_resource
             && cs.equal(C.cs)
 #elif defined(USE_OGL)
             && pp.equal(C.pp)
+#elif defined(USE_VK)
+            && cs.equal(C.cs)
 #endif
             && samp.equal(C.samp)
             && handler == C.handler;

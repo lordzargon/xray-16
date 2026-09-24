@@ -102,7 +102,7 @@ public:
         // C.r_Sampler_rtf		("s_tonemap",	"$user$tonemap"	);	//. hack
         C.r_dx11Texture("s_tonemap", "$user$tonemap"); //. hack
         C.PassSET_ZB(FALSE, FALSE);
-#elif defined(USE_OGL)
+#elif defined(USE_OGL) || defined(USE_VK)
         C.r_Sampler_clf("s_sky0", "$null");
         C.r_Sampler_clf("s_sky1", "$null");
         C.r_Sampler_rtf("s_tonemap", "$user$tonemap"); //. hack
@@ -187,6 +187,9 @@ void dxEnvironmentRender::lerp(CEnvDescriptorMixer& currentEnv, IEnvDescriptorRe
 #ifdef USE_OGL
     tsky0->surface_set(GL_TEXTURE_CUBE_MAP, e0);
     tsky1->surface_set(GL_TEXTURE_CUBE_MAP, e1);
+#elif defined(USE_VK)
+    tsky0->surface_set(e0);
+    tsky1->surface_set(e1);
 #else // USE_OGL
     tsky0->surface_set(e0);
     _RELEASE(e0);
@@ -200,6 +203,9 @@ void dxEnvironmentRender::lerp(CEnvDescriptorMixer& currentEnv, IEnvDescriptorRe
 #   ifdef USE_OGL
     t_envmap_0->surface_set(GL_TEXTURE_CUBE_MAP, e0);
     t_envmap_1->surface_set(GL_TEXTURE_CUBE_MAP, e1);
+#   elif defined(USE_VK)
+    t_envmap_0->surface_set(e0);
+    t_envmap_1->surface_set(e1);
 #   else // USE_OGL
     t_envmap_0->surface_set(e0);
     _RELEASE(e0);
@@ -251,20 +257,20 @@ void dxEnvironmentRender::RenderSky(CEnvironment& env)
     RCache.set_xform_world(mSky);
     RCache.set_Geometry(sh_2geom);
     RCache.set_Shader(sh_2sky);
-#if defined(USE_DX11) || defined(USE_OGL)
+#if defined(USE_DX11) || defined(USE_OGL) || defined(USE_VK)
     RCache.set_Textures(&sky_r_textures);
 #else
 #   error No graphics API selected or enabled!
 #endif
     RCache.Render(D3DPT_TRIANGLELIST, v_offset, 0, 12, i_offset, 20);
 
-#ifdef USE_OGL
+#if defined(USE_OGL) || defined(USE_VK)
     // Sun must be rendered to generic0 only as it is done in DX
     if (!RImplementation.o.msaa)
         RImplementation.Target->u_setrt(RCache, RImplementation.Target->rt_Generic_0, nullptr, nullptr, RImplementation.Target->rt_Base_Depth);
     else
         RImplementation.Target->u_setrt(RCache, RImplementation.Target->rt_Generic_0_r, nullptr, nullptr, RImplementation.Target->rt_MSAADepth);
-#endif // USE_OGL
+#endif // USE_OGL || USE_VK
 
     // Sun
     RImplementation.rmNormal(RCache);
@@ -282,13 +288,13 @@ void dxEnvironmentRender::RenderSky(CEnvironment& env)
     env.eff_LensFlare->Render(TRUE, FALSE, FALSE);
 #endif // RENDER != R_R1
 
-#ifdef USE_OGL
+#if defined(USE_OGL) || defined(USE_VK)
     // set low/hi RTs for clouds
     if (!RImplementation.o.msaa)
         RImplementation.Target->u_setrt(RCache, RImplementation.Target->rt_Generic_0, RImplementation.Target->rt_Generic_1, nullptr, RImplementation.Target->rt_Base_Depth);
     else
         RImplementation.Target->u_setrt(RCache, RImplementation.Target->rt_Generic_0_r, RImplementation.Target->rt_Generic_1_r, nullptr, RImplementation.Target->rt_MSAADepth);
-#endif // USE_OGL
+#endif // USE_OGL || USE_VK
 }
 
 void dxEnvironmentRender::RenderClouds(CEnvironment& env)
@@ -399,6 +405,12 @@ void dxEnvironmentRender::OnDeviceDestroy()
     t_envmap_0->surface_set(GL_TEXTURE_CUBE_MAP, 0);
     t_envmap_1->surface_set(GL_TEXTURE_CUBE_MAP, 0);
     tonemap->surface_set(GL_TEXTURE_CUBE_MAP, 0);
+#elif defined(USE_VK)
+    tsky0->surface_set(VK_NULL_HANDLE);
+    tsky1->surface_set(VK_NULL_HANDLE);
+    t_envmap_0->surface_set(VK_NULL_HANDLE);
+    t_envmap_1->surface_set(VK_NULL_HANDLE);
+    tonemap->surface_set(VK_NULL_HANDLE);
 #else
 #   error No graphics API slected or defined!
 #endif

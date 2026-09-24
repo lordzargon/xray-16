@@ -39,6 +39,12 @@ public:
     GLuint pRT{};
     GLuint pZRT{};
     GLenum target{};
+#elif defined(USE_VK)
+    VkImageView pRT{ VK_NULL_HANDLE };
+    VkImageView pZRT{ VK_NULL_HANDLE };
+    VkImage pSurface{ VK_NULL_HANDLE };
+    VkDeviceMemory pMemory{ VK_NULL_HANDLE };
+    VkFormat target{ VK_FORMAT_UNDEFINED };
 #else
 #   error No graphics API selected or enabled!
 #endif

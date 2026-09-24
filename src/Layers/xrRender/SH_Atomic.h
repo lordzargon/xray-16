@@ -31,6 +31,8 @@ struct ECORE_API SVS : public xr_resource_named
     ID3DVertexShader* sh;
 #elif defined(USE_OGL)
     GLuint sh;
+#elif defined(USE_VK)
+    VkShaderModule sh{ VK_NULL_HANDLE };
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -50,6 +52,8 @@ struct ECORE_API SPS : public xr_resource_named
     ID3DPixelShader* sh;
 #elif defined(USE_OGL)
     GLuint sh;
+#elif defined(USE_VK)
+    VkShaderModule sh{ VK_NULL_HANDLE };
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -65,6 +69,8 @@ struct ECORE_API SGS : public xr_resource_named
     ID3DGeometryShader* sh;
 #elif defined(USE_OGL)
     GLuint sh;
+#elif defined(USE_VK)
+    VkShaderModule sh{ VK_NULL_HANDLE };
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -79,6 +85,8 @@ struct ECORE_API SHS : public xr_resource_named
 	ID3D11HullShader* sh;
 #elif defined(USE_OGL)
     GLuint sh;
+#elif defined(USE_VK)
+    VkShaderModule sh{ VK_NULL_HANDLE };
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -93,6 +101,8 @@ struct ECORE_API SDS : public xr_resource_named
     ID3D11DomainShader* sh;
 #elif defined(USE_OGL)
     GLuint sh;
+#elif defined(USE_VK)
+    VkShaderModule sh{ VK_NULL_HANDLE };
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -107,6 +117,8 @@ struct ECORE_API SCS : public xr_resource_named
     ID3D11ComputeShader* sh;
 #elif defined(USE_OGL)
     GLuint sh;
+#elif defined(USE_VK)
+    VkShaderModule sh{ VK_NULL_HANDLE };
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -149,6 +161,9 @@ struct ECORE_API SDeclaration : public xr_resource_flagged
     xr_vector<D3D_INPUT_ELEMENT_DESC> dx11_dcl_code;
 #elif defined(USE_OGL)
     GLuint dcl;
+#elif defined(USE_VK)
+    xr_vector<VkVertexInputBindingDescription> bindings;
+    xr_vector<VkVertexInputAttributeDescription> attributes;
 #else
 #   error No graphics API selected or enabled!
 #endif

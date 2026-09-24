@@ -48,6 +48,8 @@ void dxImGuiRender::Frame()
     ImGui_ImplDX11_NewFrame();
 #elif defined(USE_OGL)
     ImGui_ImplOpenGL3_NewFrame();
+#elif defined(USE_VK)
+    // Vulkan ImGui frame in Phase 3.2
 #endif
 }
 
@@ -57,6 +59,8 @@ void dxImGuiRender::Render(ImDrawData* data)
     ImGui_ImplDX11_RenderDrawData(data);
 #elif defined(USE_OGL)
     ImGui_ImplOpenGL3_RenderDrawData(data);
+#elif defined(USE_VK)
+    // Vulkan ImGui draw in Phase 3.2
 #endif
 }
 
@@ -81,6 +85,8 @@ void dxImGuiRender::OnDeviceCreate(ImGuiContext* context)
     ImGui_ImplDX11_Init(HW.pDevice, HW.get_context(CHW::IMM_CTX_ID));
 #elif defined(USE_OGL)
     ImGui_ImplOpenGL3_Init();
+#elif defined(USE_VK)
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
 #endif
 }
 void dxImGuiRender::OnDeviceDestroy()
@@ -89,6 +95,9 @@ void dxImGuiRender::OnDeviceDestroy()
     ImGui_ImplDX11_Shutdown();
 #elif defined(USE_OGL)
     ImGui_ImplOpenGL3_Shutdown();
+#elif defined(USE_VK)
+    ImGuiIO& io = ImGui::GetIO();
+    io.BackendFlags &= ~ImGuiBackendFlags_RendererHasTextures;
 #endif
 }
 
@@ -98,6 +107,7 @@ void dxImGuiRender::OnDeviceResetBegin()
     ImGui_ImplDX11_InvalidateDeviceObjects();
 #elif defined(USE_OGL)
     ImGui_ImplOpenGL3_DestroyDeviceObjects();
+#elif defined(USE_VK)
 #endif
 }
 
@@ -107,6 +117,7 @@ void dxImGuiRender::OnDeviceResetEnd()
     ImGui_ImplDX11_CreateDeviceObjects();
 #elif defined(USE_OGL)
     ImGui_ImplOpenGL3_CreateDeviceObjects();
+#elif defined(USE_VK)
 #endif
 }
 } // namespace xray::render::RENDER_NAMESPACE

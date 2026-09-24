@@ -86,6 +86,9 @@ static class cl_pos_decompress_params : public R_constant_setup
 #elif defined(USE_OGL)
         const float VertTan = tanf(deg2rad(Device.fFOV / 2.0f));
         const float HorzTan = VertTan / Device.fASPECT;
+#elif defined(USE_VK)
+        const float VertTan = -1.0f * tanf(deg2rad(Device.fFOV / 2.0f));
+        const float HorzTan = -VertTan / Device.fASPECT;
 #else
 #   error No graphics API selected or enabled!
 #endif
@@ -385,8 +388,8 @@ void CRender::create()
     o.ssao_hdao = ps_r2_ls_flags_ext.test(R2FLAGEXT_SSAO_HDAO) && (ps_r_ssao != 0);
     o.ssao_ultra = HW.ComputeShadersSupported && ssao_hdao_cs_shaders_exist();
     o.ssao_hbao = !o.ssao_hdao && ps_r2_ls_flags_ext.test(R2FLAGEXT_SSAO_HBAO) && (ps_r_ssao != 0);
-#elif defined(USE_OGL)
-    // TODO: OGL: temporary disabled HBAO/HDAO, need to fix it
+#elif defined(USE_OGL) || defined(USE_VK)
+    // TODO: OGL/VK: temporary disabled HBAO/HDAO, need to fix it
     o.ssao_hbao = false;
     o.ssao_hdao = false;
 #else
@@ -402,7 +405,7 @@ void CRender::create()
 #if defined(USE_DX11)
     o.dx11_sm4_1 = ps_r2_ls_flags.test((u32)R3FLAG_USE_DX10_1);
     o.dx11_sm4_1 = o.dx11_sm4_1 && (HW.FeatureLevel >= D3D_FEATURE_LEVEL_10_1);
-#elif defined(USE_OGL)
+#elif defined(USE_OGL) || defined(USE_VK)
     o.dx11_sm4_1 = true;
 #else
 #   error No graphics API selected or enabled!
@@ -420,8 +423,8 @@ void CRender::create()
     // o.msaa_hybrid	= ps_r2_ls_flags.test(R3FLAG_MSAA_HYBRID);
     o.msaa_hybrid = ps_r2_ls_flags.test((u32)R3FLAG_USE_DX10_1);
     o.msaa_hybrid &= !o.msaa_opt && o.msaa && (HW.FeatureLevel >= D3D_FEATURE_LEVEL_10_1);
-#elif defined(USE_OGL)
-    // TODO: OGL: temporary disabled, need to fix it
+#elif defined(USE_OGL) || defined(USE_VK)
+    // TODO: OGL/VK: temporary disabled, need to fix it
     o.msaa = false;
     o.msaa_samples = 0;
     o.msaa_opt = o.msaa;

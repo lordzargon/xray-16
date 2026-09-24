@@ -52,6 +52,25 @@ void CEngineAPI::SelectRenderer()
 {
     ZoneScoped;
 
+#if defined(__ANDROID__)
+    // Prefer Vulkan by default on Android
+    const auto vk_it = std::find_if(renderModes.begin(), renderModes.end(), [](const auto& pair)
+    {
+        return xr_strcmp(pair.first, "renderer_vk") == 0;
+    });
+    if (vk_it != renderModes.end() && vk_it->second->CheckGameRequirements())
+    {
+        selectedRenderer = vk_it->second;
+        pcstr selected_mode = vk_it->first;
+        string64 buf;
+        xr_sprintf(buf, "renderer %s", selected_mode);
+        Console->Execute(buf);
+        selectedRenderer->SetupEnv(selected_mode);
+        Log("Selected renderer:", selected_mode);
+        return;
+    }
+#endif
+
     // User has some renderer selected, find it
     pcstr selected_mode = Console->GetString("renderer");
     const auto it = std::find_if(renderModes.begin(), renderModes.end(), [selected_mode](const auto& pair)
@@ -70,17 +89,21 @@ void CEngineAPI::SelectRenderer()
     // or we don't comply with it's requirements (e.g. shaders missing)
     if (!selectedRenderer)
     {
-        // Select any suitable
-        for (const auto& [mode, renderer] : renderModes)
+
+        if (!selectedRenderer)
         {
-            if (renderer->CheckGameRequirements())
+            // Select any suitable
+            for (const auto& [mode, renderer] : renderModes)
             {
-                selectedRenderer = renderer;
-                selected_mode = mode;
-                string64 buf;
-                xr_sprintf(buf, "renderer %s", selected_mode);
-                Console->Execute(buf);
-                break;
+                if (renderer->CheckGameRequirements())
+                {
+                    selectedRenderer = renderer;
+                    selected_mode = mode;
+                    string64 buf;
+                    xr_sprintf(buf, "renderer %s", selected_mode);
+                    Console->Execute(buf);
+                    break;
+                }
             }
         }
     }
@@ -123,7 +146,7 @@ void CEngineAPI::Destroy()
     XRC.r_clear_compact();
 }
 
-void CEngineAPI::CreateRendererList(const std::array<RendererModule*, 2>& modules)
+void CEngineAPI::CreateRendererList(RendererModule* const* modules, size_t count)
 {
     if (!VidQualityToken.empty())
         return;
@@ -139,7 +162,7 @@ void CEngineAPI::CreateRendererList(const std::array<RendererModule*, 2>& module
         if (modes.empty())
             return false;
 
-        for (const auto [mode, modeIndex] : modes)
+        for (const auto& [mode, modeIndex] : modes)
         {
             const auto it = renderModes.find(mode);
             if (it != renderModes.end())
@@ -156,12 +179,12 @@ void CEngineAPI::CreateRendererList(const std::array<RendererModule*, 2>& module
 
     if (GEnv.isDedicatedServer)
     {
-        R_ASSERT2(loadRenderer(modules[0]), "Dedicated server needs xrRender to work");
+        R_ASSERT2(count > 0 && loadRenderer(modules[0]), "Dedicated server needs xrRender to work");
     }
     else
     {
-        for (const auto& module : modules)
-            loadRenderer(module);
+        for (size_t i = 0; i < count; ++i)
+            loadRenderer(modules[i]);
     }
 
     auto& modes = VidQualityToken;
